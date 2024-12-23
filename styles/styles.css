@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+h1 {
+    color: #FFFFFF;
+    font-family: 'Nunito';
+    font-size: 45px;
+    margin-top: 0px;
+    margin-bottom: 3px;
+}
+
+.moreinfo {
+    font-family: 'Inconsolata';
+    font-size: 15px;
+}
+
+p {
+    font-family: 'Inconsolata';
+    color: #00FF00;
+    filter: brightness(85%)
+}
+
+a {
+    font-family: 'Nunito';
+    color: #00FF00;
+    filter: brightness(85%);
+    font-size: 14px;
+}
+
+a:hover {
+    color: rgb(184, 235, 168);
+}
+
+.p1 {
+    margin-bottom: 1px;
+    font-size: 15px;
+}
+
+.p0 {
+    font-size: 20px;
+    margin-top: 3px;
+}
+
+.rickroll {
+    font-size: 14px;
+    margin-top: 50px;
+}
+
+.crapautop {
+    font-family: 'Inconsolata';
+}
+
+.autoclickln {
+    font-size: 14px;
+}
+
+table {
+    color: #FFFFFF;
+    border-collapse: collapse;
+    margin-top: 15px;
+    margin-bottom: 50px;
+}
+
+th, td {
+    border: 1px solid #00FF00;
+    filter: brightness(85%);
+    padding: 6px;
+    font-family: 'Inconsolata';
+    font-size: 14px;
+    color:#d7effa
+}
+
+.navigation {
+    color: #FFFFFF
+}
+
+.redirect {
+    font-family: 'Overpass';
+    font-size: 12px;
+}
+
+input {
+    display: block;
+    margin: 0 auto;
+    margin-bottom: 0px;
+}
+
+.info {
+    margin-bottom: 15px;
+}
+
+.desmosketch {
+    font-family: 'Nunito';
+    color: #00FF00;
+    filter: brightness(85%);
+    font-size: 14px;
+}
+
+pre {
+    font-family: 'Inconsolata', monospace;
+    color: #00FF00;
+    filter: brightness(85%);
+    font-size: 14px;
+}
+
+body {
+    font-family: 'Roboto Mono', monospace;
+    background-color: #000000;
+}
+
+#excuse, #normal, #school {
+    margin-top: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #00FF00;
+    filter: brightness(85%);
+    font-family:'Inconsolata', monospace;
+}
+
+button {
+    color: #000000;
+    border: 5px solid #059905;
+    padding: 10px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    background-color: #08d208;
+    filter: brightness(85%);
+    font-family: 'Ubuntu', sans-serif;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color:rgb(118, 201, 118)
+}
+
+#bat, #baseball, #glass1, #glass2, #glass3, #glass4, #glass5 {
+    width: 150px;
+    height: 150px;
+    border-radius: 10px;
+    margin-right: 30px;
+    margin-left: 30px;
+    margin-top: 15px;
+}
+
+.container-img {
+    display: flex;
+    justify-content: center;
+}
+
+#real_glass {
+    color: rgb(11, 11, 11);
+    margin-top: 250px;
+    font-family: 'Ubuntu', sans-serif;
+}
+
+#hex1, #hex2, #hex3, #hex4 {
+    margin-left: 20px;
+    margin-right: 20px;
+    font-family: 'Ubuntu', sans-serif;
+}
+
+#skip {
+    margin-top: 1000000px;
+}
+
+.button-container1, .button-container2, .button-container3, .button-container4{
+    display: flex;
+    justify-content: center;
+}
+
+div {
+    color:#00FF00;
+    filter: brightness(85%);
+    font-family: 'Inconsolata', monospace;
+}
+
+#result {
+    font-family:'Ubuntu', sans-serif;
+    margin-bottom: 20px;
+    font-size: 24px;
+    height: 50px;
+    line-height: 50px;
+    border: 1px solid #000; 
+    padding: 0 10px; 
+}
+
+.calc-button {
+    width: 75px;  
+    height: 75px; 
+    padding: 10px; 
+    font-size: 25px; 
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Nunito'
+}

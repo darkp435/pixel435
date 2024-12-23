@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles/output.css">
+  <title>Hacker Gambling</title>
+  <style>
+    #result {
+      color: white;
+      font-size: 30px;
+      font-weight: bold;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    button {
+      font-size: 1.2rem;
+    }
+
+    i {
+      color: #00FF00;
+      filter: brightness(85%);
+      display: none;
+    }
+  </style>
+</head>
+<body style="text-align: center;">
+  <div style="visibility: hidden;" id="gotTag">You got:</div>
+  <div id="result">Click the button below to roll!</div>
+  <i id="desc"></i>
+  <br>
+  <button id="rollButton">Roll</button>
+  <script src="rng.js"></script>
+</body>
+</html>

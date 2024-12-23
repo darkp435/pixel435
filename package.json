@@ -1,0 +1,23 @@
+{
+  "name": "pixel435",
+  "version": "1.0.0",
+  "main": "asi.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "tailwindcss build styles.css -o output.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.15.0",
+    "is-even": "^1.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.15",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4"
+  }
+}
