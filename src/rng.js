@@ -1,6 +1,8 @@
 const resultElement = document.getElementById("result")
 
 class CreateTag {
+    special = false
+
     constructor(name, value, description, color) {
         this.name = name
         this.value = value // value is percentage chance
@@ -9,7 +11,7 @@ class CreateTag {
     }
 
     getValue() {
-        return this.value + '% chance';
+        return this.value + ' % chance';
     }
 
     setTagColor() {
@@ -18,6 +20,8 @@ class CreateTag {
 }
 
 class SpecialTag extends CreateTag {
+    special = true
+
     constructor(name, value, description, color, attribute='', minigame, font) {
         super(name, value, description, color)
         this.attribute = attribute
@@ -73,6 +77,31 @@ function RNG() {
     return options[index !== -1 ? index : 8];
 }
 
+function tagToObject(tag) {
+    switch (tag) {
+        case 'brute force':
+            return bruteForce
+        case 'buffer overflow':
+            return bufferOverflow
+        case 'rainbow table':
+            return rainbowTable
+        case 'SQL injection':
+            return SQLInjection
+        case 'DDoS':
+            return DDoS
+        case 'social engineering':
+            return socialEngineering
+        case 'rootkit':
+            return rootkit
+        case 'data interception':
+            return dataInterception
+        case '0-day exploit':
+            return Day0
+        default:
+            return
+    }
+}
+
 function rollForItem() {
     resultElement.style.color = 'white'
     rollButton.disabled = true
@@ -81,6 +110,7 @@ function rollForItem() {
     let delay = 150;
 
     function roll() {
+        resultElement.style.fontFamily = 'Arial'
         // Select a random item
         let rolling = RNG();
         let result = RNG();
@@ -89,11 +119,19 @@ function rollForItem() {
         resultElement.textContent = rolling.name;
 
         rolling.setTagColor()
+        if (rolling.special) {
+            rolling.setFont()
+        }
         // Stop after 20 spins
         if (spins > 9) {
             rollButton.disabled = false
             resultElement.textContent = result.name;
             result.setTagColor()
+            if (rolling.special) {
+                rolling.setFont()
+            }
+
+            localStorage.setItem('recent', result.name)
             document.getElementById('desc').style.display = 'block'
             document.getElementById('desc').textContent = result.description
             return; // Stop the function from running further
@@ -109,6 +147,14 @@ function rollForItem() {
 
     // Start the first roll with initial delay
     setTimeout(roll, delay);
+}
+
+let recent = tagToObject(localStorage.getItem('recent'))
+
+if (recent !== undefined) {
+    recent.textContent += `${recent.name}, ${recent.getValue}`
+} else {
+    throw new Error('error')
 }
 
 rollButton.addEventListener("click", rollForItem);
