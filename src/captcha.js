@@ -30,7 +30,7 @@ function complete(back) {
             (canContinue) ? succeed() : fail()
         }
         containerImg.appendChild(i)
-        i.src = 'assets/glass' + index + '.png'
+        i.src = '../assets/glass' + index + '.png'
         i.id = 'glass' + index
         index++
     }
@@ -191,7 +191,7 @@ function finish() {
                         if (final.value == 0.1 + 0.2) {
                             q.textContent = 'CAPTCHA complete! You are a human! (Note: all feedback will be piped to /dev/null)'
                             let bee = document.createElement('img')
-                            bee.src = 'assets/bee.png'
+                            bee.src = '../assets/bee.png'
                             homepg.className = 'flex justify-center'
                             containerImg.appendChild(bee)
                         } else {
