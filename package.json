@@ -4,7 +4,7 @@
   "main": "asi.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:css": "tailwindcss build styles.css -o output.css --watch"
+    "build:css": "tailwindcss build styles.css -i styles/styles.css -o styles/output.css --watch"
   },
   "keywords": [],
   "author": "",
