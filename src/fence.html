@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fence</title>
+    <style>
+        button {
+            font-size: 16px;
+            padding: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Burn down Jame's fence simulator</h2>
+    <img src="../assets/fence.png" alt="fence img">
+    <div id="burnCount">Burns: </div>
+    <button id="burn">Burn</button>
+    <div>Store</div>
+    <button id="upgrade">Upgrade fire power: 100 ashes</button>
+    <script>
+        let burnButton = document.getElementById('burn')
+        let count = document.getElementById('burnCount')
+        let upgradeButton = document.getElementById('upgrade')
+        let savedBurns = parseInt(localStorage.getItem('burns')) || 0
+        let burns = savedBurns
+        let counter = 1
+
+        function updateCounter() {
+            count.innerHTML = `Ashes: ${burns}`
+        }
+
+        function save() {
+            localStorage.setItem('burns', burns)
+        }
+
+        burnButton.onclick = () => {
+            burnButton.disabled = true
+
+            setTimeout(() => {
+                burns += counter
+                updateCounter()
+                save()
+                burnButton.disabled = false
+            }, 50)
+        }
+
+        
+
+        updateCounter()
+    </script>
+</body>
+</html>
