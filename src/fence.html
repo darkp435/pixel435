@@ -6,8 +6,17 @@
     <title>Fence</title>
     <style>
         button {
-            font-size: 16px;
+            font-size: 18px;
             padding: 3px;
+            margin: 5px;
+            border-radius: 1px;
+            cursor: pointer;
+            background-color: orange;
+            transition: background-color 0.5s ease;
+        }
+
+        button:hover {
+            background-color: rgb(209, 150, 40)
         }
 
         body {
@@ -22,22 +31,29 @@
         #container {
             margin-top: 5px;
             width: 500px;
-            border-radius: 3px;
+            border-radius: 5px;
             padding: 3px;
             background-color: rgba(197, 195, 213, 0.5);
+        }
+
+        #burnCount {
+            font-size: 20px;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
     <div id="container">
         <h2>Burn down Jame's fence simulator</h2>
-        <div id="burnCount">Burns: </div>
+        <div id="burnCount"></div>
         <button id="burn">Burn</button>
-        <h4>Store</h4>
+        <h3>Frank's store of different shenanigans</h4>
         <button id="upgrade">More heat: 100 ashes</button>
         <br>
         <button id="auto">Automatic burner: 10000 ashes</button>
         <button id="burner-upgrade">Upgrade automatic burner: 999 ashes</button>
+        <br>
+        <a href="../index.html">Back to home page</a>
     </div>
     <script>
         let automatic = localStorage.getItem('auto') || false
