@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #define M 30000
+
 // brainrot interpreter source code
 void f(const char*b){unsigned char d[M]={0};int c=0;int a=0;while(b[a]){if(strncmp(&b[a],"skibidi",7)==0){d[c]++;a+=7;}else if(strncmp(
 &b[a],"sigma",5)==0){d[c]--;a+=5;}else if(strncmp(&b[a],"rizz",4)==0){c++;a+=4;}else if(strncmp(&b[a],"ohio",4)==0){c--;a+=4;}else if(

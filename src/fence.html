@@ -16,6 +16,7 @@
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
         }
 
         #container {
@@ -34,7 +35,9 @@
         <button id="burn">Burn</button>
         <h4>Store</h4>
         <button id="upgrade">More heat: 100 ashes</button>
-        <button id="auto">Automatic burner</button>
+        <br>
+        <button id="auto">Automatic burner: 10000 ashes</button>
+        <button id="burner-upgrade">Upgrade automatic burner: 999 ashes</button>
     </div>
     <script>
         let automatic = localStorage.getItem('auto') || false
@@ -46,7 +49,9 @@
         let savedBurns = parseInt(localStorage.getItem('burns')) || 0
         let burns = savedBurns
         let counter = power + 1
-
+        let burnerPower = parseInt(localStorage.getItem('burner') || 0) + 100
+        let burnerUpgrade = document.getElementById('burner-upgrade')
+        
         function updateCounter() {
             count.innerHTML = `Ashes: ${burns}`
             counter = power + 1
@@ -56,6 +61,7 @@
             localStorage.setItem('burns', burns)
             localStorage.setItem('power', power)
             localStorage.setItem('auto', automatic)
+            localStorage.setItem('burner', burnerPower - 100)
         }
 
         burnButton.onclick = () => {
@@ -85,12 +91,43 @@
             if (burns > 9999) {
                 burns -= 10000
                 automatic = true
+                autoButton.disabled = true
+                burnerUpgrade.disabled = false
+
+                setInterval(() => {
+                    burns += burnerPower
+                    updateCounter()
+                    save()
+                }, 1000)
+
+                save()
+                updateCounter()
+            }
+        }
+
+        burnerUpgrade.onclick = () => {
+            if (burns > 998) {
+                burnerPower += 5
+                burns -= 999
                 save()
                 updateCounter()
             }
         }
 
         updateCounter()
+
+        if (automatic === 'true') {
+            autoButton.disabled = true
+
+            setInterval(() => {
+                burns += burnerPower
+                updateCounter()
+                save()
+            }, 1000)
+
+        } else {
+            burnerUpgrade.disabled = true
+        }
     </script>
 </body>
 </html>
