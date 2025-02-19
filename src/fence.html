@@ -9,29 +9,53 @@
             font-size: 16px;
             padding: 3px;
         }
+
+        body {
+            background-image: url('../assets/fence.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        #container {
+            margin-top: 5px;
+            width: 500px;
+            border-radius: 3px;
+            padding: 3px;
+            background-color: rgba(197, 195, 213, 0.5);
+        }
     </style>
 </head>
 <body>
-    <h2>Burn down Jame's fence simulator</h2>
-    <img src="../assets/fence.png" alt="fence img">
-    <div id="burnCount">Burns: </div>
-    <button id="burn">Burn</button>
-    <div>Store</div>
-    <button id="upgrade">Upgrade fire power: 100 ashes</button>
+    <div id="container">
+        <h2>Burn down Jame's fence simulator</h2>
+        <div id="burnCount">Burns: </div>
+        <button id="burn">Burn</button>
+        <h4>Store</h4>
+        <button id="upgrade">More heat: 100 ashes</button>
+        <button id="auto">Automatic burner</button>
+    </div>
     <script>
+        let automatic = localStorage.getItem('auto') || false
+        let power = parseInt(localStorage.getItem('power')) || 0
+        let autoButton = document.getElementById('auto')
         let burnButton = document.getElementById('burn')
         let count = document.getElementById('burnCount')
-        let upgradeButton = document.getElementById('upgrade')
+        let upgrade1Button = document.getElementById('upgrade')
         let savedBurns = parseInt(localStorage.getItem('burns')) || 0
         let burns = savedBurns
-        let counter = 1
+        let counter = power + 1
 
         function updateCounter() {
             count.innerHTML = `Ashes: ${burns}`
+            counter = power + 1
         }
 
         function save() {
             localStorage.setItem('burns', burns)
+            localStorage.setItem('power', power)
+            localStorage.setItem('auto', automatic)
         }
 
         burnButton.onclick = () => {
@@ -45,7 +69,26 @@
             }, 50)
         }
 
-        
+        upgrade1Button.onclick = () => {
+            // stop the burns from going negative
+            if (burns > 99) {
+                burns -= 100
+                power++
+                updateCounter()
+                save()
+            } else {
+                console.log('not enough burns')
+            }
+        }
+
+        autoButton.onclick = () => {
+            if (burns > 9999) {
+                burns -= 10000
+                automatic = true
+                save()
+                updateCounter()
+            }
+        }
 
         updateCounter()
     </script>
