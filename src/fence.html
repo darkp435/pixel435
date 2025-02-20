@@ -52,100 +52,15 @@
         <button id="upgrade">More heat: 100 ashes</button>
         <br>
         <button id="auto">Automatic burner: 10000 ashes</button>
+        <br>
         <button id="burner-upgrade">Upgrade automatic burner: 999 ashes</button>
+        <br>
+        <button id="lower-suspicion">Lower Jame's suspicion: 1337 ashes</button>
+        <br>
+        <button id="agreement-button">Bribe James so you could keep burning his fence: 1000000 ashes</button>
         <br>
         <a href="../index.html">Back to home page</a>
     </div>
-    <script>
-        let automatic = localStorage.getItem('auto') || false
-        let power = parseInt(localStorage.getItem('power')) || 0
-        let autoButton = document.getElementById('auto')
-        let burnButton = document.getElementById('burn')
-        let count = document.getElementById('burnCount')
-        let upgrade1Button = document.getElementById('upgrade')
-        let savedBurns = parseInt(localStorage.getItem('burns')) || 0
-        let burns = savedBurns
-        let counter = power + 1
-        let burnerPower = parseInt(localStorage.getItem('burner') || 0) + 100
-        let burnerUpgrade = document.getElementById('burner-upgrade')
-        let suspicion = parseInt(localStorage.getItem('suspicion')) || 0
-        
-        function updateCounter() {
-            count.innerHTML = `Ashes: ${burns}`
-            counter = power + 1
-        }
-
-        function save() {
-            localStorage.setItem('burns', burns)
-            localStorage.setItem('power', power)
-            localStorage.setItem('auto', automatic)
-            localStorage.setItem('burner', burnerPower - 100)
-        }
-
-        burnButton.onclick = () => {
-            burnButton.disabled = true
-
-            setTimeout(() => {
-                burns += counter
-                updateCounter()
-                save()
-                burnButton.disabled = false
-            }, 50)
-        }
-
-        upgrade1Button.onclick = () => {
-            // stop the burns from going negative
-            if (burns > 99) {
-                burns -= 100
-                power++
-                updateCounter()
-                save()
-            } else {
-                console.log('not enough burns')
-            }
-        }
-
-        autoButton.onclick = () => {
-            if (burns > 9999) {
-                burns -= 10000
-                automatic = true
-                autoButton.disabled = true
-                burnerUpgrade.disabled = false
-
-                setInterval(() => {
-                    burns += burnerPower
-                    updateCounter()
-                    save()
-                }, 1000)
-
-                save()
-                updateCounter()
-            }
-        }
-
-        burnerUpgrade.onclick = () => {
-            if (burns > 998) {
-                burnerPower += 5
-                burns -= 999
-                save()
-                updateCounter()
-            }
-        }
-
-        updateCounter()
-
-        if (automatic === 'true') {
-            autoButton.disabled = true
-
-            setInterval(() => {
-                burns += burnerPower
-                updateCounter()
-                save()
-            }, 1000)
-
-        } else {
-            burnerUpgrade.disabled = true
-        }
-    </script>
+    <script src="fence.js"></script>
 </body>
 </html>
