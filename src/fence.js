@@ -1,4 +1,4 @@
-let automatic = localStorage.getItem('auto') || false;
+let automatic = localStorage.getItem('auto') === 'true' || false;
 let power = parseInt(localStorage.getItem('power')) || 0;
 let autoButton = document.getElementById('auto');
 let burnButton = document.getElementById('burn');
@@ -13,6 +13,8 @@ let suspicion = parseInt(localStorage.getItem('suspicion')) || 0;
 let lowerSuspicion = document.getElementById('lower-suspicion');
 let agreement = localStorage.getItem('agreement') === 'true' || false;
 let agreeButton = document.getElementById('agreement-button');
+let info = document.getElementById('info')
+let details = document.getElementById('details')
 let raiseSuspicion;
 
 function updateCounter() {
@@ -134,6 +136,11 @@ agreeButton.onclick = () => {
         updateCounter();
     }
 };
+
+info.onclick = () => {
+    const currentDisplay = window.getComputedStyle(details).display;
+    details.style.display = currentDisplay !== 'none' ? 'none' : 'flex';
+}
 
 updateCounter();
 
