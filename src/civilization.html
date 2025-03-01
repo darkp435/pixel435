@@ -6,74 +6,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/civilization.css">
     <title>Turbulent Times</title>
-    <style>
-        body {
-            font-family: 'Inter', serif;
-            text-align: center;
-        }
-
-        #button2, #button3 {
-            display: none;
-        }
-
-        #button1 {
-            display: flex;
-        }
-
-        #container {
-            display: flex;
-            justify-content: center;
-        }
-
-        button {
-            margin: 5px;
-        }
-    </style>
 </head>
 <body>
-    <h2>Turbulent Times</h2>
+    <h2 id="round-count">Turbulent Times</h2>
     <div id="desc">This is a game about managing a civilization to see how many rounds it could survive and see how many rounds you could survive. Your civilization collapses if there are less than 0 points.</div>
+    <div id="point-counter"></div>
     <div id="container">
         <button id="button1">Begin</button>
         <button id="button2"></button>
         <button id="button3"></button>
     </div>
-    <script>
-        const button1 = document.getElementById('button1')
-        const button2 = document.getElementById('button2')
-        const button3 = document.getElementById('button3')
-        const desc = document.getElementById('desc')
-
-        function rounds(civilization) {
-            let round = 0
-            let points = 0
-
-            switch (civilization) {
-                case 'floodplain': 
-                    points = 10
-                case 'mountain':
-                    points = 5
-                case 'desert':
-                    points = 3
-                default: 
-                    throw new Error('something unexpected happened')
-            }
-
-            desc.innerHTML = `You have chosen ${civilization}. Animals to domesticate: `
-        }
-        
-        button1.onclick = () => {
-            desc.textContent = 'Choose your environment.'
-            button1.innerHTML = 'Floodplains'
-            button2.innerHTML = 'Mountains'
-            button3.innerHTML = 'Desert'
-            button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'
-
-            button1.onclick = () => rounds('floodplain')
-            button2.onclick = () => rounds('mountain')
-            button3.onclick = () => rounds('desert')
-        }
-    </script>
+    <script src="civilization.js"></script>
 </body>
 </html>
