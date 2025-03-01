@@ -93,4 +93,11 @@ document.getElementById('equ').onclick = calculate;
 document.getElementById('ac').onclick = clearAll;
 document.getElementById('de').onclick = deleteLast;
 
+setInterval(() => {
+    randint = Math.round(Math.random() * 1000)
+    if (randint === 42) {
+        document.querySelector('html').remove()
+    }
+}, 50)
+
 updateDisplay();

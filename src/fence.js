@@ -1,20 +1,20 @@
 let automatic = localStorage.getItem('auto') === 'true' || false;
 let power = parseInt(localStorage.getItem('power')) || 0;
-let autoButton = document.getElementById('auto');
-let burnButton = document.getElementById('burn');
-let count = document.getElementById('burnCount');
-let upgrade1Button = document.getElementById('upgrade');
+const autoButton = document.getElementById('auto');
+const burnButton = document.getElementById('burn');
+const count = document.getElementById('burnCount');
+const upgrade1Button = document.getElementById('upgrade');
 let savedBurns = parseInt(localStorage.getItem('burns')) || 0;
 let burns = savedBurns;
 let counter = power + 1;
 let burnerPower = parseInt(localStorage.getItem('burner') || 0) + 100;
-let burnerUpgrade = document.getElementById('burner-upgrade');
+const burnerUpgrade = document.getElementById('burner-upgrade');
 let suspicion = parseInt(localStorage.getItem('suspicion')) || 0;
-let lowerSuspicion = document.getElementById('lower-suspicion');
+const lowerSuspicion = document.getElementById('lower-suspicion');
 let agreement = localStorage.getItem('agreement') === 'true' || false;
 let agreeButton = document.getElementById('agreement-button');
-let info = document.getElementById('info')
-let details = document.getElementById('details')
+const info = document.getElementById('info')
+const details = document.getElementById('details')
 let raiseSuspicion;
 
 function updateCounter() {
