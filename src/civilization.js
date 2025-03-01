@@ -11,6 +11,7 @@ class Round {
         this.pts = pts
         this.roundNum = 0
         this.emergencyWater = false
+        this.happiness = 3
     }
 
     plague() {
@@ -23,16 +24,19 @@ class Round {
     flood() {
         this.roundNum++
         roundCount.innerHTML = `Round ${this.roundNum}: Flood`
-        switch (civilization) {
+        switch (this.civilization) {
             case 'floodplains': 
                 desc.innerHTML = 'The floods absolutely devoured your civilization with no mercy.<br>4 points lost.'
                 this.pts -= 4
+                break
             case 'mountains':
                 desc.innerHTML = 'The floods did a minor toll on your civilization.<br>2 points lost.'
                 this.pts -= 2
+                break
             case 'desert':
                 desc.innerHTML = 'You heard news that a flood happened nearby. However, being in the desert, there is a lack of water.<br>No points gained or lost.'
-        }
+                break
+        }   
     }
 
     waterChoice() {
@@ -45,39 +49,56 @@ class Round {
         button1.innerHTML = 'Irrigate the crops'
         button2.innerHTML = 'Save the water (in case of emergency)'
         
-        const waitForClick = new Promise((resolve) => {
-            button1.onclick = () => {
+        return new Promise((resolve) => {
+            button1.addEventListener('click', () => {
                 desc.innerHTML = 'You irrigate the crops and they seem to grow a lot better.<br>3 points from the extra food.'
                 this.pts += 3
                 resolve()
-            }
+            })
 
-            button2.onclick = () => {
+            button2.addEventListener('click', () => {
                 desc.innerHTML = 'You decide to think for the future and save your excess water for later use. Perhaps this might come in useful later...?'
                 this.emergencyWater = true
                 resolve()
-            }
-        })
-
-        waitForClick.then(() => {
-            return
+            })
         })
     }
 
     gold() {
         this.roundNum++
-        desc.innerHTML = 'You struck gold, a valuable resource!<br>Gained 3 points.'
-        this.pts += 3
+        roundCount.innerHTML = `Round ${this.roundNum}: Gold!`
+        desc.innerHTML = 'You struck gold, a valuable resource! What would you like to do with it?'
+        button1.style.display = 'flex'
+        button1.innerHTML = 'Take them all'
+        button2.style.display = 'flex'
+        button2.innerHTML = 'Give them to the people'
+
+        return new Promise((resolve) => {
+            button1.addEventListener('click', () => {
+                desc.innerHTML = 'You took all the gold for yourself, because you are king of this civilization. However, not that many people are happy with your decision...<br>Gained 3 points.'
+                this.happiness -= Math.floor(Math.random() * 2) + 1
+                this.pts += 3
+                resolve()
+            })
+
+            button2.addEventListener('click', () => {
+                desc.innerHTML = "You decided that sharing is caring and gave them all to the people, because communism. The people seemed happy, but you didn't really get anything.<br>0 points gained or lost, but this may not be a bad thing..."
+                this.happiness++
+                resolve()
+            })
+        })
     }
 
     trade() {
         this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Trading`
         desc.innerHTML = 'You found another civilization and made some trades with them. The trades were way better for you than they were for them.<br>Gained 3 points.'
         this.pts += 3
     }
 
     waterShortage() {
         this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Water Shortage`
         let random = Math.floor(Math.random() * 3) + 2 // generate number between 2 and 4 inclusive
 
         if (this.emergencyWater) {
@@ -88,36 +109,57 @@ class Round {
             this.pts -= random
         }
     }
+
+    revolution() {
+        this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Revolution`
+        desc.innerHTML = "Due to your bad decisions, your people don't want to be ruled by you. They plotted a revolution and you have been overthrown by your people.<br>Maybe hoarding that gold all to yourself wasn't a good idea...?<br>Due to this, you are no longer in charge of your civilization, but at least they have a new leader now that could probably manage a civilization better than you, right?"
+    }
 }
 
-function rounds(civilization) {
+function waitForClick(button) {
+    return new Promise((resolve) => {
+        button.addEventListener('click', () => {
+            resolve()
+        })
+    })
+}
+
+async function rounds(civilization) {
     let round
     switch (civilization) {
         case 'floodplains': 
-            round = new Round('floodplains', 8)
+            round = new Round('floodplains', 8); break
         case 'mountains':
-            round = new Round('mountains', 5)
+            round = new Round('mountains', 5); break
         case 'desert':
-            round = new Round('desert', 3)
+            round = new Round('desert', 3); break
     }
 
     desc.innerHTML = `You have chosen ${civilization}.`
+    button1.innerHTML = 'Start'
+    button2.style.display = 'none'
+    button3.style.display = 'none'
+    await waitForClick(button1)
 
     while (true) {
         button1.style.display = 'none'
         button2.style.display = 'none'
         button3.style.display = 'none'
 
-        if (round.roundNum % 5 === 0) {
-            round.waterChoice()
+        if (round.roundNum % 5 === 0 && round.roundNum !== 0) {
+            await round.waterChoice()
+        } else if (round.happiness <= 0) {
+            round.revolution()
+            break
         } else {
             randevent = Math.floor(Math.random() * 5)
             switch (randevent) {
-                case 0: round.plague()
-                case 1: round.flood()
-                case 2: round.trade()
-                case 3: round.gold()
-                case 4: round.waterShortage()
+                case 0: round.plague(); break
+                case 1: round.flood(); break
+                case 2: round.trade(); break
+                case 3: await round.gold(); break
+                case 4: round.waterShortage(); break
             }
         }
         
@@ -126,28 +168,22 @@ function rounds(civilization) {
             button2.style.display = 'none'
             button3.style.display = 'none'
             button1.innerHTML = 'Continue to next round'
-            
-            const waitForClick = new Promise((resolve) => {
-                button1.onclick = () => {
-                    resolve()
-                }
-            })
-
-            waitForClick.then(() => {})
+            await waitForClick(button1)
         } else {
-            desc.innerHTML = `Your civilization has crumbled! Made it to round ${round.roundNum} before the ultimate demise of your society.`
+            desc.innerHTML += `<br>Your civilization has crumbled! Made it to round ${round.roundNum} before the ultimate demise of your society.`
             button1.style.display = 'none'; button2.style.display = 'none'; button3.style.display = 'none'
+            break
         }
     }
 }
 
-button1.onclick = () => {
+button1.addEventListener('click', () => {
     desc.textContent = 'Choose your environment.'
     button1.innerHTML = 'Floodplains'
     button2.innerHTML = 'Mountains'
     button3.innerHTML = 'Desert'
     button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'
-    button1.onclick = () => rounds('floodplains')
-    button2.onclick = () => rounds('mountains')
-    button3.onclick = () => rounds('desert')
-}
+    button1.addEventListener('click', () => rounds('floodplains'))
+    button2.addEventListener('click', () => rounds('mountains'))
+    button3.addEventListener('click', () => rounds('desert'))
+})
