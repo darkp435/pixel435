@@ -1,6 +1,7 @@
 body {
     font-family: 'Inter', serif;
     text-align: center;
+    background-color: rgba(250, 182, 34, 0.25);
 }
 
 #button2, #button3 {
@@ -18,4 +19,13 @@ body {
 
 button {
     margin: 5px;
+    font-size: 17px;
+    border-radius: 2px;
+    border: 2px solid black;
+    transition: background-color 0.3s ease-in-out;
+}
+
+button:hover {
+    cursor: pointer;
+    background-color: rgba(218, 165, 49, 0.25)
 }

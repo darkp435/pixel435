@@ -1,6 +1,8 @@
 const button1 = document.getElementById('button1')
 const button2 = document.getElementById('button2')
 const button3 = document.getElementById('button3')
+const button4 = document.getElementById('button4')
+const button5 = document.getElementById('button5')
 const desc = document.getElementById('desc')
 const roundCount = document.getElementById('round-count')
 let randevent
@@ -115,6 +117,48 @@ class Round {
         roundCount.innerHTML = `Round ${this.roundNum}: Revolution`
         desc.innerHTML = "Due to your bad decisions, your people don't want to be ruled by you. They plotted a revolution and you have been overthrown by your people.<br>Maybe hoarding that gold all to yourself wasn't a good idea...?<br>Due to this, you are no longer in charge of your civilization, but at least they have a new leader now that could probably manage a civilization better than you, right?"
     }
+
+    buy() {
+        this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Build`
+        desc.innerHTML = "Your people ask for you to build some things to benefit the civilization more. What do you wish to build?"
+        button1.innerHTML = 'Schools'
+        button2.innerHTML = 'Roads'
+        button3.innerHTML = 'Healthcare'
+        button4.innerHTML = 'Temple'
+        button5.innerHTML = 'Farms'
+        
+        return new Promise((resolve) => {
+            button1.addEventListener('click', () => {
+                desc.innerHTML = 'Your people decided that for whatever reason, schools were not the main priority, which is probably expected from civilians that did not get much education.<br>Lost 2 points.'
+                this.pts -= 2
+                resolve()
+            })
+
+            button2.addEventListener('click', () => {
+                desc.innerHTML = "Out of all the things that you could've spent the civilization's resources on, you decided that roads would be the main priority. It is no wonder that your people aren't happy.<br>Lost 3 points."
+                this.pts -= 3
+                resolve()
+            })
+
+            button3.addEventListener('click', () => {
+                desc.innerHTML = "You actually decide to spend your resources on something actually good! But, this was a massive fail because your people did not know how to treat patients, but it was an epic fail.<br>Lost 1 point."
+                this.pts--
+                resolve()
+            })
+
+            button4.addEventListener('click', () => {
+                desc.innerHTML = "Worshipping your gods were your top priority, but it didn't really sit well with your people because you could've spent it on something more immediately beneficial to your civilization.<br>Lost 2 points."
+                this.pts -= 2
+                resolve()
+            })
+
+            button5.addEventListener('click', () => {
+                desc.innerHTML = "Your people expected something more... specialised, but oh well, you got some extra farms, at least that's extra food, even though you still had plenty.<br>No points gained or lost."
+                resolve()
+            })
+        })
+    }
 }
 
 function waitForClick(button) {
@@ -153,13 +197,14 @@ async function rounds(civilization) {
             round.revolution()
             break
         } else {
-            randevent = Math.floor(Math.random() * 5)
+            randevent = Math.floor(Math.random() * 6)
             switch (randevent) {
                 case 0: round.plague(); break
                 case 1: round.flood(); break
                 case 2: round.trade(); break
                 case 3: await round.gold(); break
                 case 4: round.waterShortage(); break
+                case 5: await round.buy(); break
             }
         }
         
@@ -167,6 +212,9 @@ async function rounds(civilization) {
             button1.style.display = 'flex'
             button2.style.display = 'none'
             button3.style.display = 'none'
+            button4.style.display = 'none'
+            button5.style.display = 'none'
+
             button1.innerHTML = 'Continue to next round'
             await waitForClick(button1)
         } else {
