@@ -14,6 +14,7 @@ class Round {
         this.roundNum = 0
         this.emergencyWater = false
         this.happiness = 3
+        this.hasTribute = false
     }
 
     plague() {
@@ -74,6 +75,8 @@ class Round {
         button1.innerHTML = 'Take them all'
         button2.style.display = 'flex'
         button2.innerHTML = 'Give them to the people'
+        button3.style.display = 'flex'
+        button3.innerHTML = 'Pay tribute to the gods'
 
         return new Promise((resolve) => {
             button1.addEventListener('click', () => {
@@ -88,7 +91,25 @@ class Round {
                 this.happiness++
                 resolve()
             })
+
+            button3.addEventListener('click', () => {
+                desc.innerHTML = "The gods should be honored was what you decided. Your people agree with this as that will probably be the best use scenario - satisfying the gods so that they could protect you, but this will only come in handy later...<br>No points gained or lost."
+                this.hasTribute = true
+                resolve()
+            })
         })
+    }
+
+    raid() {
+        this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Raid`
+        if (this.hasTribute) {
+            desc.innerHTML = "The civilization is trying to raid you, and they found your tribute and took it and left. At least it didn't crumble...<br>No points gained or lost."
+            this.hasTribute = false
+        } else {
+            desc.innerHTML = "The civilization has raided you and took everything valuable in your civilization with no mercy.<br>Lost 5 points."
+            this.pts -= 5
+        }
     }
 
     trade() {
@@ -196,6 +217,8 @@ async function rounds(civilization) {
         } else if (round.happiness <= 0) {
             round.revolution()
             break
+        } else if (round.roundNum % 10 === 0 && round.roundNum !== 0) {
+            round.raid()
         } else {
             randevent = Math.floor(Math.random() * 6)
             switch (randevent) {

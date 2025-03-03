@@ -96,7 +96,9 @@ document.getElementById('de').onclick = deleteLast;
 setInterval(() => {
     randint = Math.round(Math.random() * 1000)
     if (randint === 42) {
-        document.querySelector('html').remove()
+        document.body.style.transition = "opacity 1s";
+        document.body.style.opacity = "0";
+        setTimeout(() => document.body.remove(), 1000);
     }
 }, 50)
 
