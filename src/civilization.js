@@ -20,7 +20,7 @@ class Round {
     plague() {
         this.roundNum++
         roundCount.innerHTML = `Round ${this.roundNum}: Plague`
-        desc.innerHTML = 'Your civilization was hit with a heavy plague.<br>2 points lost.'
+        desc.innerHTML = 'Your civilization was hit with a heavy plague.<br>Lost 2 points.'
         this.pts -= 2
     }
 
@@ -29,11 +29,11 @@ class Round {
         roundCount.innerHTML = `Round ${this.roundNum}: Flood`
         switch (this.civilization) {
             case 'floodplains': 
-                desc.innerHTML = 'The floods absolutely devoured your civilization with no mercy.<br>4 points lost.'
+                desc.innerHTML = 'The floods absolutely devoured your civilization with no mercy.<br>Lost 4 points.'
                 this.pts -= 4
                 break
             case 'mountains':
-                desc.innerHTML = 'The floods did a minor toll on your civilization.<br>2 points lost.'
+                desc.innerHTML = 'The floods did a minor toll on your civilization.<br>Lost 2 points.'
                 this.pts -= 2
                 break
             case 'desert':
@@ -54,13 +54,13 @@ class Round {
         
         return new Promise((resolve) => {
             button1.addEventListener('click', () => {
-                desc.innerHTML = 'You irrigate the crops and they seem to grow a lot better.<br>3 points from the extra food.'
+                desc.innerHTML = 'You irrigate the crops and they seem to grow a lot better.<br>Gained 3 points.'
                 this.pts += 3
                 resolve()
             })
 
             button2.addEventListener('click', () => {
-                desc.innerHTML = 'You decide to think for the future and save your excess water for later use. Perhaps this might come in useful later...?'
+                desc.innerHTML = 'You decide to think for the future and save your excess water for later use. Perhaps this might come in useful later...?<br>No points gained or lost.'
                 this.emergencyWater = true
                 resolve()
             })
@@ -87,7 +87,7 @@ class Round {
             })
 
             button2.addEventListener('click', () => {
-                desc.innerHTML = "You decided that sharing is caring and gave them all to the people, because communism. The people seemed happy, but you didn't really get anything.<br>0 points gained or lost, but this may not be a bad thing..."
+                desc.innerHTML = "You decided that sharing is caring and gave them all to the people, because communism. The people seemed happy, but you didn't really get anything.<br>No points gained or lost, but this may not be a bad thing..."
                 this.happiness++
                 resolve()
             })
@@ -180,6 +180,13 @@ class Round {
             })
         })
     }
+
+    farms() {
+        this.roundNum++
+        roundCount.innerHTML = `Round ${this.round}: Farm Success`
+        desc.innerHTML = "The farms that you grew were extra successful and extra large compared to other yields.<br>Gained 3 points"
+        this.pts += 3
+    }
 }
 
 function waitForClick(button) {
@@ -194,11 +201,11 @@ async function rounds(civilization) {
     let round
     switch (civilization) {
         case 'floodplains': 
-            round = new Round('floodplains', 8); break
+            round = new Round('floodplains', 15); break
         case 'mountains':
-            round = new Round('mountains', 5); break
+            round = new Round('mountains', 10); break
         case 'desert':
-            round = new Round('desert', 3); break
+            round = new Round('desert', 5); break
     }
 
     desc.innerHTML = `You have chosen ${civilization}.`
@@ -220,7 +227,7 @@ async function rounds(civilization) {
         } else if (round.roundNum % 10 === 0 && round.roundNum !== 0) {
             round.raid()
         } else {
-            randevent = Math.floor(Math.random() * 6)
+            randevent = Math.floor(Math.random() * 7)
             switch (randevent) {
                 case 0: round.plague(); break
                 case 1: round.flood(); break
@@ -228,6 +235,7 @@ async function rounds(civilization) {
                 case 3: await round.gold(); break
                 case 4: round.waterShortage(); break
                 case 5: await round.buy(); break
+                case 6: round.farms(); break
             }
         }
         
