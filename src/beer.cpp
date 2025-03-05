@@ -37,10 +37,19 @@ void createSong(int bottles, string output) {
 }
 
 int main() {
-    int bottles;
+    string inputBottles;
     string output, song;
-    cout << "Bottles of beer on the wall: " << endl;
-    cin >> bottles;
+    int bottles;
+
+    cout << "Bottles of beer on the wall (default: 100): " << endl;
+    getline(cin, inputBottles);
+
+    if (inputBottles == "\n") {
+        bottles = 100;
+    } else {
+        bottles = stoi(inputBottles);
+    }
+
     cout << "Output file: " << endl;
     cin >> output;
     // handle edge case in casef the user enters a negative number or 0 (edge case)
