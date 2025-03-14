@@ -18,3 +18,4 @@ bower_components/
 Thumbs.db
 logs/
 *.log
+eslint.config.mjs
