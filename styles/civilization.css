@@ -1,0 +1,61 @@
+body {
+    font-family: 'Inter', serif;
+    text-align: center;
+    background-image: url('../assets/civilization.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+#button2, #button3, #button4, #button5 {
+    display: none;
+}
+
+#button1, #button2, #button3, #button4, #button5 {
+    margin: 5px;
+    font-size: 17px;
+    border-radius: 2px;
+    border: 2px solid black;
+    transition: background-color 0.3s ease-in-out;
+}
+
+button:hover {
+    cursor: pointer;
+    background-color: rgba(218, 165, 49, 0.5)
+}
+
+#point-counter {
+    font-size: 15px;
+}
+
+#white-box {
+    display: block; /* Block-level for the main container */
+    margin-top: 10px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.5);
+    width: 1000px;
+    padding: 10px;
+}
+
+#white-box > *:not(#button-container) {
+    display: block; /* Ensure non-button elements have a line break */
+}
+
+#button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#desc, h2 {
+    margin: 0px;
+    padding: 0px;
+}
+
+button {
+    padding: 5px;
+    border-radius: 2px;
+    height: 30;
+}

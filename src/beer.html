@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Overpass:ital,wght@0,100..900;1,100..900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../styles/output.css">
+        <title>Beer song generator</title>
+    </head>
+    <body>
+        <h1>Bottles Of Beer Song Generator</h1>
+        <p>The title says it all. It is in C++, and here is the source code (without headers):</p>
+
+        <pre><code>
+using namespace std;void createSong(int bottles, string output){ofstream outFile(output);if(outFile.is_open()){while(bottles&gt;0) {
+if(bottles == 1){
+outFile&lt;&lt;"1 bottle of beer on the wall,&lt;br&gt;";
+outFile &lt;&lt; "1 bottle of beer!&lt;br&gt;";
+--bottles;
+outFile &lt;&lt; "Take one down, pass it around&lt;br&gt;";
+outFile &lt;&lt; "No bottles of beer on the wall.&lt;br&gt;&lt;br&gt;";
+} else {
+outFile &lt;&lt; to_string(bottles) + " bottles of beer on the wall,&lt;br&gt;";
+outFile &lt;&lt; to_string(bottles) + " bottles of beer!&lt;br&gt;";
+--bottles;
+outFile &lt;&lt; "Take one down, pass it around&lt;br&gt;";
+outFile &lt;&lt; to_string(bottles) + " bottles of beer on the wall.&lt;br&gt;&lt;br&gt;";
+}
+}
+
+outFile &lt;&lt; "No more bottles of beer on the wall, no more bottles of beer.&lt;br&gt;";
+outFile &lt;&lt; "Go to the store and buy some more, 100 bottles of beer on the wall.&lt;br&gt;";
+
+outFile.close();
+cout &lt;&lt; "Song written to " &lt;&lt; output &lt;&lt; "&lt;br&gt;" &lt;&lt; endl;
+return;
+} else {
+cerr &lt;&lt; "Unable to open file"&lt;br&gt;&lt;&lt; endl;
+return;
+}
+}
+
+int main() {
+string inputBottles;
+string output, song;
+int bottles;
+
+cout &lt;&lt; "Bottles of beer on the wall (default: 100): "&lt;&lt; endl;
+getline(cin, inputBottles);
+
+if (inputBottles == "&lt;br&gt;") {
+bottles = 100;
+} else {
+bottles = stoi(inputBottles);
+}
+
+cout &lt;&lt; "Output file: "&lt;&lt; endl;
+cin &gt;&gt; output;
+if (bottles &lt; 1) {
+cout &lt;&lt; "Please enter a positive number that is bigger than 0."&lt;&lt; endl;
+return 0;
+}
+
+createSong(bottles, output);
+return 0;
+}
+            </code></pre>            
+        <br>
+        <a href="../index.html">Back to home page</a>
+    </body>
+</html>
