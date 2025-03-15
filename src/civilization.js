@@ -16,6 +16,8 @@ class Round {
     #emergencyWater
     #happiness
     #hasTribute
+    #faminePotential
+    #builtLess
 
     constructor(civilization, pts, focus) {
         this.#civilization = civilization
@@ -25,6 +27,8 @@ class Round {
         this.#emergencyWater = false
         this.#happiness = 3
         this.#hasTribute = false
+        this.#faminePotential = false
+        this.#builtLess = false
     }
 
     newRound() {
@@ -169,7 +173,7 @@ class Round {
         button2.innerHTML = 'Roads'
         button3.innerHTML = 'Healthcare'
         button4.innerHTML = 'Temple'
-        button5.innerHTML = 'Farms'
+        button5.innerHTML = 'Nothing'
         
         return new Promise((resolve) => {
             button1.onclick = () => {
@@ -197,7 +201,9 @@ class Round {
             }
 
             button5.onclick = () => {
-                desc.innerHTML = "Your people expected something more... specialised, but oh well, you got some extra farms, at least that's extra food, even though you still had plenty.<br>No points gained or lost."
+                desc.innerHTML = "You decided to not listen to your people like a totalitarianist regime and your people were not very happy about it.<br>Lost 4 points."
+                this.#pts -= 4
+                this.#builtLess = true
                 resolve()
             }
         })
@@ -230,6 +236,95 @@ class Round {
             desc.innerHTML = "A tornado did a major toll on your civilization, and you don't see that much recovery soon.<br>Lost 5 points."
             this.#pts -= 5
         }
+    }
+
+    resources() {
+        if (this.#faminePotential) {
+            return new Promise((resolve) => {
+                this.famine()
+                resolve()
+            })
+        }
+
+        roundCount.innerHTML = `Round ${this.#roundNum}: Resource Crisis`
+        if (this.#builtLess) {
+            return new Promise((resolve) => {
+                desc.innerHTML = "You almost had a resource crisis, but due to you building less, it didn't really have an effect, but after that, your building speed has gone back to normal.<br>Lost 1 point."
+                this.#pts--
+                this.#builtLess = false
+                resolve()
+            })
+        }
+
+        button1.style.display = 'flex'
+        button2.style.display = 'flex'
+        button1.innerHTML = 'Do nothing'
+
+        switch (this.#focus) {
+            case 'building':
+                button2.innerHTML = "Build less"
+                return new Promise((resolve) => {
+                    button1.onclick = () => {
+                        desc.innerHTML = "You decide to do nothing about it.<br>Lost 4 points."
+                        this.#pts -= 4
+                        resolve()
+                    }
+
+                    button2.onclick = () => {
+                        desc.innerHTML = "You decide to build less, but that was a big problem because your civilization is primarily focused on building.<br>Lost 6 points."
+                        this.#pts -= 6
+                        this.#builtLess = true
+                        resolve()
+                    }
+                })
+
+            case 'trading':
+                button2.innerHTML = "Trade with other civilizations"
+                return new Promise((resolve) => {
+                    button1.onclick = () => {
+                        desc.innerHTML = "You did nothing about the resource crisis.<br>Lost 4 points."
+                        this.#pts -= 4
+                        resolve()
+                    }
+
+                    button2.onclick = () => {
+                        desc.innerHTML = "You traded with another civilization with your food to try to avoid it. However, now your food is little.<br>No points gained or lost."
+                        this.#faminePotential = true
+                        resolve()
+                    }
+                })
+
+            case 'raiding':
+                button2.innerHTML = "Raid another civilization"
+
+                return new Promise((resolve) => {
+                    button1.onclick = () => {
+                        desc.innerHTML = "You did nothing about the resource crisis.<br>Lost 3 points."
+                        this.#pts -= 3
+                        resolve()
+                    }
+
+                    button2.onclick = () => {
+                        randevent = Math.floor(Math.random() * 2)
+                        if (randevent === 0) {
+                            desc.innerHTML = "You decided to raid another civilization and lost.<br>Lost 6 points."
+                            this.#pts -= 6
+                            resolve()
+                        } else {
+                            desc.innerHTML = "You decided to raid another civilization and won.<br>Gained 3 points."
+                            this.#pts += 3
+                            resolve()
+                        }
+                    }
+                })
+        }
+    }
+
+    famine() {
+        roundCount.innerHTML = `Round ${this.#roundNum}: Famine`
+        desc.innerHTML = "You had a famine in your civilization and it hit quite hard.<br>Lost 9 points, but your civilization then stocked up on more food."
+        this.#pts -= 9
+        this.#faminePotential = false
     }
 }
 

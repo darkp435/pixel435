@@ -14,8 +14,8 @@
 
         <pre><code>
 using namespace std;void createSong(int bottles, string output){ofstream outFile(output);if(outFile.is_open()){while(bottles&gt;0) {
-if (bottles == 1) {
-outFile &lt;&lt; "1 bottle of beer on the wall,&lt;br&gt;";
+if(bottles == 1){
+outFile&lt;&lt;"1 bottle of beer on the wall,&lt;br&gt;";
 outFile &lt;&lt; "1 bottle of beer!&lt;br&gt;";
 --bottles;
 outFile &lt;&lt; "Take one down, pass it around&lt;br&gt;";
