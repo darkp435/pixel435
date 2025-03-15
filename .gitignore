@@ -19,4 +19,4 @@ logs/
 *.log
 eslint.config.mjs
 styles/output.css
-/dist/
+dist/
