@@ -273,8 +273,6 @@ async function rounds(civilization, focus) {
         button3.style.display = 'none'
         button4.style.display = 'none'
         button5.style.display = 'none'
-        pointCounter.innerHTML = `Current points: ${round.getPts()}`
-
         round.newRound()
 
         if (round.happiness <= 0) {
@@ -306,6 +304,7 @@ async function rounds(civilization, focus) {
             button5.style.display = 'none'
 
             button1.innerHTML = 'Continue to next round'
+            pointCounter.innerHTML = `Current points: ${round.getPts()}`
             await waitForClick()
         } else {
             desc.innerHTML += `<br>Your civilization has crumbled! Made it to round ${round.getRound()} before the ultimate demise of your society.`
