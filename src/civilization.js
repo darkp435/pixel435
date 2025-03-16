@@ -356,7 +356,7 @@ async function rounds(civilization, focus) {
             round = new Round('desert', 5, focus); break
     }
 
-    desc.innerHTML = `You have chosen ${civilization}.`
+    desc.innerHTML = `<strong>Your civilization details</strong><br>Environment: ${civilization}<br>Focus: ${focus}<br>Starting points: ${round.getPts()}`
     button1.innerHTML = 'Start'
     button2.style.display = 'none'
     button3.style.display = 'none'
