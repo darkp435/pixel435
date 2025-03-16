@@ -1,6 +1,5 @@
 # build script for project (subject to change)
-
-Set-Location C:\Users\duant\pixel435
+# REMEMBER TO EXECUTE THIS IN THE ROOT DIRECTORY OF THE PROJECT OR ELSE IT WON'T WORK!!!
 
 if (Test-Path -Path dist) {
     Remove-Item dist -Recurse -Force
