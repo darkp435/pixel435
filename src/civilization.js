@@ -183,9 +183,16 @@ class Round {
 
     farms() {
         this.roundNum++
-        roundCount.innerHTML = `Round ${this.round}: Farm Success`
+        roundCount.innerHTML = `Round ${this.roundNum}: Farm Success`
         desc.innerHTML = "The farms that you grew were extra successful and extra large compared to other yields.<br>Gained 3 points"
         this.pts += 3
+    }
+
+    minerals() {
+        this.roundNum++
+        roundCount.innerHTML = `Round ${this.roundNum}: Precious Minerals`
+        desc.innerHTML = "You have discovered some rare minerals from your miners.<br>Gained 5 points"
+        this.pts += 5
     }
 }
 
@@ -208,7 +215,7 @@ async function rounds(civilization) {
             round = new Round('desert', 5); break
     }
 
-    desc.innerHTML = `You have chosen ${civilization}.`
+    desc.innerHTML = `You have chosen ${civilization}.<br>In case you care, your civilization name will be "Humuhumunukunukuadeiaswe", and your people will be called the "Humuhumunukunukuadeiaswein people".`
     button1.innerHTML = 'Start'
     button2.style.display = 'none'
     button3.style.display = 'none'
@@ -227,7 +234,7 @@ async function rounds(civilization) {
         } else if (round.roundNum % 10 === 0 && round.roundNum !== 0) {
             round.raid()
         } else {
-            randevent = Math.floor(Math.random() * 7)
+            randevent = Math.floor(Math.random() * 8)
             switch (randevent) {
                 case 0: round.plague(); break
                 case 1: round.flood(); break
@@ -236,6 +243,7 @@ async function rounds(civilization) {
                 case 4: round.waterShortage(); break
                 case 5: await round.buy(); break
                 case 6: round.farms(); break
+                case 7: round.minerals(); break
             }
         }
         
