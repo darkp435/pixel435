@@ -16,6 +16,7 @@ New-Item dist\assets -ItemType Directory
 Copy-Item -Path src\* -Destination dist\src -Recurse
 
 Copy-Item -Path styles\* -Destination dist\styles -Recurse
+Remove-Item -Path dist\styles\styles.css
 
 Copy-Item -Path assets\* -Destination dist\assets -Recurse
 
