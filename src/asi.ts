@@ -1,6 +1,6 @@
 function addSemicolons() {
     let times = 0
-    let code = document.getElementById("codeInput").value;
+    let code = (document.getElementById("codeInput") as HTMLInputElement)?.value ?? "";
     let lines = code.split('\n');
     let processedCode = lines.map(line => {
         if (line.length > 0 && !line.endsWith(';') && !line.endsWith('{') && !line.endsWith('}') && !line.endsWith('>')) {
@@ -9,6 +9,15 @@ function addSemicolons() {
         }
         return line;
     }).join('\n');
-    document.getElementById("output").innerHTML = processedCode;
-    document.getElementById("count").innerHTML = 'Semicolons added: ' + times
+    let output = document.getElementById('output')
+
+    if (output) {
+        output.innerHTML = processedCode
+    }
+
+    let count = document.getElementById('count')
+
+    if (count) {
+        count.innerHTML = "Semicolons added: " + times
+    }
 }
