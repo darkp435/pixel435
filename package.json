@@ -12,7 +12,8 @@
   "description": "",
   "dependencies": {
     "autoprefixer": "^10.4.20",
-    "is-even": "^1.0.0"
+    "is-even": "^1.0.0",
+    "npm": "^11.2.0"
   },
   "devDependencies": {
     "eslint": "^9.22.0",
