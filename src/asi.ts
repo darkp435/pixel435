@@ -21,3 +21,5 @@ function addSemicolons() {
         count.innerHTML = "Semicolons added: " + times
     }
 }
+
+document.getElementById('add-semicolons')!.onclick = () => addSemicolons()

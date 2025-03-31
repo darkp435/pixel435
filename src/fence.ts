@@ -1,39 +1,38 @@
-let automatic = localStorage.getItem('auto') === 'true' || false;
-let power = parseInt(localStorage.getItem('power')) || 0;
-const autoButton = document.getElementById('auto');
-const burnButton = document.getElementById('burn');
-const count = document.getElementById('burnCount');
-const upgrade1Button = document.getElementById('upgrade');
-let savedBurns = parseInt(localStorage.getItem('burns')) || 0;
-let burns = savedBurns;
-let counter = power + 1;
-let burnerPower = parseInt(localStorage.getItem('burner') || 0) + 100;
-const burnerUpgrade = document.getElementById('burner-upgrade');
-let suspicion = parseInt(localStorage.getItem('suspicion')) || 0;
-const lowerSuspicion = document.getElementById('lower-suspicion');
-let agreement = localStorage.getItem('agreement') === 'true' || false;
-let agreeButton = document.getElementById('agreement-button');
-const info = document.getElementById('info')
-const details = document.getElementById('details')
-let raiseSuspicion;
+let automatic: boolean = localStorage.getItem('auto') === 'true' || false;
+let power: number = parseInt(localStorage.getItem('power') || "0")
+const autoButton = document.getElementById('auto') as HTMLButtonElement
+const burnButton = document.getElementById('burn') as HTMLButtonElement
+const count = document.getElementById('burnCount') as HTMLElement
+const upgrade1Button = document.getElementById('upgrade') as HTMLButtonElement
+let savedBurns: number = parseInt(localStorage.getItem('burns') || "0")
+let burns: number = savedBurns
+let counter: number = power + 1
+let burnerPower: number = parseInt(localStorage.getItem('burner') || "0") + 100
+const burnerUpgrade = document.getElementById('burner-upgrade') as HTMLButtonElement
+let suspicion: number = parseInt(localStorage.getItem('suspicion') || "0")
+const lowerSuspicion = document.getElementById('lower-suspicion') as HTMLButtonElement
+let agreement: boolean = localStorage.getItem('agreement') === 'true' || false
+let agreeButton = document.getElementById('agreement-button') as HTMLButtonElement
+const info = document.getElementById('info') as HTMLElement
+const details = document.getElementById('details') as HTMLElement
 
 function updateCounter() {
     count.innerHTML = `Ashes: ${burns}`;
     counter = power + 1;
-    document.getElementById('suspicion').innerHTML = `James' suspicion: ${suspicion}`;
+    document.getElementById('suspicion')!.innerHTML = `James' suspicion: ${suspicion}`;
 }
 
 function save() {
-    localStorage.setItem('burns', burns);
-    localStorage.setItem('power', power);
-    localStorage.setItem('auto', automatic);
-    localStorage.setItem('burner', burnerPower - 100);
-    localStorage.setItem('suspicion', suspicion);
+    localStorage.setItem('burns', burns.toString());
+    localStorage.setItem('power', power.toString());
+    localStorage.setItem('auto', automatic.toString());
+    localStorage.setItem('burner', (burnerPower - 100).toString());
+    localStorage.setItem('suspicion', suspicion.toString());
     localStorage.setItem('agreement', agreement ? 'true' : 'false');
 }
 
-if (!agreement) {
-    raiseSuspicion = setInterval(() => {
+let raiseSuspicion = setInterval(() => {
+    if (!agreement) {
         if (burns > 999) {
             suspicion++;
             updateCounter();
@@ -51,11 +50,12 @@ if (!agreement) {
             gameOverMessage.textContent = 'You have lost! Restart to try again (save wiped).';
             document.body.appendChild(gameOverMessage);
         }
-    }, 2000);
-} else {
-    agreeButton.disabled = true;
-    agreeButton.innerHTML = 'Bought.';
-}
+    } else {
+        clearInterval(raiseSuspicion)
+        agreeButton.disabled = true
+        agreeButton.innerHTML = 'Bought.'
+    }
+}, 2000);
 
 burnButton.onclick = () => {
     burnButton.disabled = true;

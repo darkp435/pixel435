@@ -20,3 +20,12 @@ logs/
 eslint.config.mjs
 styles/output.css
 dist/
+# ignore all files in src that might've been compiled
+src/captcha.js
+src/asi.js
+src/calc.js
+src/civilization.js
+src/excuses.js
+src/fence.js
+src/rng.js
+src/users.js

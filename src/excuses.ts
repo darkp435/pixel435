@@ -163,16 +163,16 @@ function generateExcuse(type) {
 
     switch (type) {
         case 'excuse':
-            document.getElementById('excuse').innerHTML = excuses[randomIndex]
+            document.getElementById('excuse')!.innerHTML = excuses[randomIndex]
             break
         case 'normal':
-            document.getElementById('normal').innerHTML = normal[randomIndex]
+            document.getElementById('normal')!.innerHTML = normal[randomIndex]
             break
         case 'school':
-            document.getElementById('school').innerHTML = school[randomIndex]
+            document.getElementById('school')!.innerHTML = school[randomIndex]
     }
 }
 
-document.getElementById('button-1').onclick = () => generateExcuse("excuse")
-document.getElementById('button-2').onclick = () => generateExcuse('normal')
-document.getElementById('button-3').onclick = () => generateExcuse('school')
+document.getElementById('button-1')!.onclick = () => generateExcuse("excuse")
+document.getElementById('button-2')!.onclick = () => generateExcuse('normal')
+document.getElementById('button-3')!.onclick = () => generateExcuse('school')

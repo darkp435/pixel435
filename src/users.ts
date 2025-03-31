@@ -1,11 +1,12 @@
-function game(repeat) {
+function beginGame(repeat) {
     // Timer variables
     let startTime = Date.now();
+    const paragraph = document.querySelector('p') as HTMLParagraphElement
 
     // Update timer every 100ms
     let timerInterval = setInterval(() => {
         let elapsedTime = Date.now() - startTime;
-        paragraph.innerHTML = `Time: ${(elapsedTime / 1000).toFixed(3)} seconds`;
+        paragraph!.innerHTML = `Time: ${(elapsedTime / 1000).toFixed(3)} seconds`;
     }, 10);
 
     let emailLabel = document.createElement('label'),
@@ -23,8 +24,7 @@ function game(repeat) {
     failure.style.display = 'none';
     failure.className = 'text-red-500 mt-4';
 
-    let paragraph = document.querySelector('p');
-    document.getElementById('start').innerHTML = 'Create account';
+    document.getElementById('start')!.innerHTML = 'Create account';
     let game1Elements = [emailLabel, emailInput, userLabel, userInput, passwordLabel, passwordInput, confirmLabel, confirmInput];
 
     // Get high score from localStorage (if any)
@@ -34,7 +34,7 @@ function game(repeat) {
     }
 
     // add onclick function for button so that the user could finish the game
-    document.getElementById('start').onclick = () => {
+    document.getElementById('start')!.onclick = () => {
         let userVal = userInput.value,
             passwordVal = passwordInput.value,
             confirmVal = confirmInput.value,
@@ -76,7 +76,7 @@ function game(repeat) {
             for (let element of game1Elements) {
                 element.remove();
             }
-            document.getElementById('start').remove();
+            document.getElementById('start')!.remove();
             clearInterval(timerInterval);
             let elapsedTime = Date.now() - startTime;
             let elapsedSeconds = (elapsedTime / 1000).toFixed(2);
@@ -108,7 +108,7 @@ function game(repeat) {
     };
 
     for (let element of game1Elements) {
-        document.querySelector('#division').appendChild(element);
+        document.querySelector('#division')!.appendChild(element);
         element.style.margin = '8px 0';
     }
 
@@ -152,7 +152,7 @@ function game(repeat) {
     confirmLabel.className = 'text-left text-gray-700';
 }
 
-document.getElementById('start').onclick = () => {
+document.getElementById('start')!.onclick = () => {
     let repeat = true;
-    game(repeat);
+    beginGame(repeat);
 };

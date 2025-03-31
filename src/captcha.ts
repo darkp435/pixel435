@@ -1,13 +1,13 @@
-let q = document.getElementById('question'),
-    game = document.getElementById('captchatitle'),
-    homepg = document.getElementById('homepg'),
-    containerImg = document.querySelector('.container-img')
+let q = document.getElementById('question') as HTMLElement,
+    game = document.getElementById('captchatitle') as HTMLElement,
+    homepg = document.getElementById('homepg') as HTMLElement,
+    containerImg = document.querySelector('.container-img') as HTMLDivElement
 
 function complete(back) {
     let index = 1
     let canContinue = false
-    document.getElementById('bat').remove()
-    document.getElementById('baseball').remove()
+    document.getElementById('bat')!.remove()
+    document.getElementById('baseball')!.remove()
     q.innerHTML = 'Please select glass.'
     // creation of glass elements
     let glass1 = document.createElement('input'),
@@ -16,7 +16,7 @@ function complete(back) {
         glass4 = document.createElement('input'),
         glass5 = document.createElement('input'),
         realGlass = document.createElement('p')
-    glasses = [glass1, glass2, glass3, glass4, glass5]
+    let glasses = [glass1, glass2, glass3, glass4, glass5]
     realGlass.style.color = 'black'
     realGlass.className = 'cursor-default'
     realGlass.innerHTML = 'glass'
@@ -27,32 +27,34 @@ function complete(back) {
         i.style.border = '2px solid white'
         i.style.padding = '2px'
         i.onclick = () => {
-            (canContinue) ? succeed() : fail()
+            (canContinue) ? succeed(glasses) : fail(glasses)
         }
         containerImg.appendChild(i)
         i.src = '../assets/glass' + index + '.png'
         i.id = 'glass' + index
         index++
     }
-    document.querySelector('.hidden-glass').appendChild(realGlass)
+    document.querySelector('.hidden-glass')!.appendChild(realGlass)
 
-    function fail() {
-        glass1.remove(); glass2.remove(); glass3.remove(); glass4.remove(); glass5.remove(); realGlass.remove()
+    function fail(glasses: Array<HTMLElement>) {
+        glasses.forEach(e => e.remove())
+        document.getElementById('realGlass')!.remove()
         q.innerHTML = "You failed the captcha on confirmation 2. You are a robot!"
         back.style.display = 'block'
     }
 }
 
 function incorrect(back) {
-    document.getElementById('bat').remove()
-    document.getElementById('baseball').remove()
+    document.getElementById('bat')!.remove()
+    document.getElementById('baseball')!.remove()
     q.innerHTML = 'Incorrect. You failed the test. You are a robot.'
     back.style.display = 'block'
 }
 
-function succeed() {
+function succeed(glasses: Array<HTMLElement>) {
     q.innerHTML = "Select the game."
-    glass1.remove(); glass2.remove(); glass3.remove(); glass4.remove(); glass5.remove(); realGlass.remove()
+    glasses.forEach(e => e.remove())
+    document.getElementById('realGlass')!.remove()
     let game1 = document.createElement('p'),
         game2 = document.createElement('p'),
         game3 = document.createElement('p'),
@@ -72,7 +74,7 @@ function succeed() {
     game4.style.color = 'blue'
 }
 
-function fail2(game1, game2, game3, game4) {
+function fail2(game1: HTMLElement, game2: HTMLElement, game3: HTMLElement, game4: HTMLElement) {
     game1.remove(); game2.remove(); game3.remove(); game4.remove()
     q.innerHTML = 'Incorrect. You failed the captcha on level 3. You are a robot!'
     game.onclick = () => next()
@@ -83,20 +85,21 @@ function next() {
     back.style.display = 'none'
     game.onclick = null
     q.innerHTML = 'Please agree to the terms and conditions.'
-    terms = document.getElementById('terms')
+    let terms = document.getElementById('terms') as HTMLElement
     terms.className = 'block'
-    agree = document.createElement('button')
+    let agree = document.createElement('button')
     agree.innerHTML = 'I have painstakingly read the terms and conditions, and hereby sign it with my blood.'
-    agree.onclick = () => agree.remove()
-    document.getElementById('realAgree').onclick = () => code()
-    document.querySelector('.agreed').appendChild(agree)
+    agree.onclick = () => agree.style.display = 'none'
+    agree.id = 'agree'
+    document.getElementById('realAgree')!.onclick = () => code()
+    document.querySelector('.agreed')!.appendChild(agree)
 }
 
 function code() {
-    terms.remove()
-    agree.remove()
+    document.getElementById('terms')!.remove()
+    document.getElementById('agree')!.remove()
     q.innerHTML = 'Please enter the verification code.'
-    verify = document.createElement('input')
+    let verify = document.createElement('input')
     verify.type = 'text'
     verify.placeholder = 'Enter your verification code here' 
     verify.className = 'bg-black text-white border border-white'
@@ -131,7 +134,7 @@ function code() {
                 containerImg.appendChild(hex2)
                 containerImg.appendChild(hex3)
                 containerImg.appendChild(hex4)
-                document.querySelector('.hidden-glass').appendChild(skip)
+                document.querySelector('.hidden-glass')!.appendChild(skip)
                 hex1.onclick = () => answers("Correct, but only robots know hexadecimal, which means you failed.")
                 hex2.onclick = () => answers("Not knowing the answer is an obvious fail.")
                 hex3.onclick = () => answers("Using AI for the answer? I don't think so, you failed.")
@@ -157,7 +160,11 @@ function code() {
 
 function finish() {
     q.innerHTML = 'To confirm that you are not a robot, enter the secondary confirmatory code.'
-    hex1.remove(); hex2.remove(); hex3.remove(); hex4.remove(); skip.remove()
+    document.getElementById('hex1')!.remove()
+    document.getElementById('hex2')!.remove()
+    document.getElementById('hex3')!.remove()
+    document.getElementById('hex4')!.remove() 
+    document.getElementById('skip')!.remove()
     let concode = document.createElement('input')
     concode.type = 'text'
     concode.placeholder = 'Enter your verification code here'
@@ -167,13 +174,13 @@ function finish() {
     concode.style.margin = '20px'
     concode.style.fontSize = '15px'
     containerImg.appendChild(concode)
-    rancode = Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
+    const rancode = Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
     console.log(Number.MIN_SAFE_INTEGER)
     console.log(Number.MAX_SAFE_INTEGER)
     console.log(rancode)
     concode.addEventListener("keydown", (event2) => {
         if (event2.key == 'Enter') {
-            if (concode.value == rancode) {
+            if (concode.value == rancode.toString()) {
                 concode.remove()
                 q.textContent = 'Evaluate 0.1 + 0.2'
                 let final = document.createElement('input')
@@ -188,7 +195,7 @@ function finish() {
                 final.addEventListener("keydown", (finalEvent) => {
                     if (finalEvent.key == 'Enter') {
                         final.remove()
-                        if (final.value == 0.1 + 0.2) {
+                        if (final.value == (0.1 + 0.2).toString()) {
                             q.textContent = 'CAPTCHA complete! You are a human! (Note: all feedback will be piped to /dev/null)'
                             let bee = document.createElement('img')
                             bee.src = '../assets/bee.png'
@@ -215,14 +222,14 @@ back.innerHTML = 'Try again'
 back.style.display = 'none'
 containerImg.appendChild(back)
 
-document.getElementById('start').onclick = () => {
-    document.getElementById('start').remove()
+document.getElementById('start')!.onclick = () => {
+    document.getElementById('start')!.remove()
     q.textContent = 'Please click the bat.'
-    document.querySelector('h1').className = 'text-lg'
-    document.querySelector('p').className = 'hidden'
+    document.querySelector('h1')!.className = 'text-lg'
+    document.querySelector('p')!.className = 'hidden'
     homepg.className = 'hidden'
-    document.getElementById('bat').style.display = 'block'
-    document.getElementById('baseball').style.display = 'block'
-    document.getElementById('bat').onclick = () => complete(back)
-    document.getElementById('baseball').onclick = () => incorrect(back)
+    document.getElementById('bat')!.style.display = 'block'
+    document.getElementById('baseball')!.style.display = 'block'
+    document.getElementById('bat')!.onclick = () => complete(back)
+    document.getElementById('baseball')!.onclick = () => incorrect(back)
 }
