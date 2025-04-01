@@ -328,7 +328,7 @@ class Round {
     }
 }
 
-function waitForClick(civ=false, focus=false) {
+function waitForClick(civ: boolean=false, focus: boolean=false) {
     return new Promise<string>((resolve) => {
         if (civ) {
             button1.onclick = () => resolve('floodplains')

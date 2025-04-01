@@ -1,4 +1,4 @@
-function beginGame(repeat) {
+function beginGame(repeat: boolean) {
     // Timer variables
     let startTime = Date.now();
     const paragraph = document.querySelector('p') as HTMLParagraphElement

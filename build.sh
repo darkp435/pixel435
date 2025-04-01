@@ -35,14 +35,7 @@ rm -f dist/styles/styles.css
 cp -r assets/* dist/assets
 
 # Build the tailwind CSS output file
-npx tailwindcss build styles/styles.css -o dist/styles/output.css
+npx tailwindcss build -i styles/styles.css -o dist/styles/output.css
 
 # Compile the TS files into JS
-npx tsc src/asi.ts --outFile dist/src/asi.js
-npx tsc src/calc.ts --outFile dist/src/calc.js
-npx tsc src/captcha.ts --outFile dist/src/captcha.js
-npx tsc src/civilization.ts --outFile dist/src/civilization.js
-npx tsc src/excuses.ts --outFile dist/src/excuses.js
-npx tsc src/fence.ts --outFile dist/src/fence.js
-npx tsc src/rng.ts --outFile dist/src/rng.js
-npx tsc src/users.ts --outFile dist/src/users.js
+npx tsc -p tsconfig.json

@@ -1,76 +1,72 @@
-try {
-    let currentInput = '';
-    let operator = '';
-    let previousInput = '';
+let currentInput = '';
+let operator = '';
+let previousInput = '';
 
-    const resultDiv = document.getElementById('result') as HTMLElement
+const resultDiv = document.getElementById('result') as HTMLElement
 
-    function updateDisplay() {
-        resultDiv.innerText = (currentInput || Math.round(Math.random() * Number.MAX_SAFE_INTEGER)).toString()
+function updateDisplay() {
+    resultDiv.innerText = (currentInput || Math.round(Math.random() * Number.MAX_SAFE_INTEGER)).toString()
+}
+
+function handleNumber(number: string) {
+    let sub = Math.random()
+    sub = Math.round(sub)
+    currentInput += (parseInt(number) - sub).toString();
+    updateDisplay();
+}
+
+function handleOperator(op: string) {
+    if (previousInput !== '') {
+        calculate();
     }
+    operator = op;
+    previousInput = currentInput;
+    currentInput = '';
+}
 
-    function handleNumber(number: string) {
-        let sub = Math.random()
-        sub = Math.round(sub)
-        currentInput += (parseInt(number) - sub).toString();
-        updateDisplay();
+function calculate() {
+    let computation: number;
+    const prev = parseFloat(previousInput);
+    const current = parseFloat(currentInput);
+    if (isNaN(prev) || isNaN(current)) return;
+
+    switch (operator) {
+        case '+':
+            computation = prev + current;
+            break;
+        case '-':
+            computation = prev - current;
+            break;
+        case '*':
+            computation = prev * current;
+            break;
+        case '/':
+            computation = prev / current;
+            break;
+        case '%':
+            computation = prev % current;
+            break;
+        default:
+            return;
     }
+    let chance = Math.round(Math.random() * 5)
+    computation = computation + chance;
+    currentInput = computation.toString()
+    operator = '';
+    previousInput = '';
+    updateDisplay();
+}
 
-    function handleOperator(op: string) {
-        if (previousInput !== '') {
-            calculate();
-        }
-        operator = op;
-        previousInput = currentInput;
-        currentInput = '';
-    }
+function clearAll() {
+    currentInput = '';
+    previousInput = '';
+    operator = '';
+    updateDisplay();
+}
 
-    function calculate() {
-        let computation: number;
-        const prev = parseFloat(previousInput);
-        const current = parseFloat(currentInput);
-        if (isNaN(prev) || isNaN(current)) return;
-
-        switch (operator) {
-            case '+':
-                computation = prev + current;
-                break;
-            case '-':
-                computation = prev - current;
-                break;
-            case '*':
-                computation = prev * current;
-                break;
-            case '/':
-                computation = prev / current;
-                break;
-            case '%':
-                computation = prev % current;
-                break;
-            default:
-                return;
-        }
-        let chance = Math.round(Math.random() * 5)
-        computation = computation + chance;
-        currentInput = computation.toString()
-        operator = '';
-        previousInput = '';
-        updateDisplay();
-    }
-
-    function clearAll() {
-        currentInput = '';
-        previousInput = '';
-        operator = '';
-        updateDisplay();
-    }
-
-    function deleteLast() {
-        currentInput = currentInput.slice(0, -1);
-        updateDisplay();
-    }
-} catch (error) {
-    console.error(error)
+function deleteLast() {
+    currentInput = currentInput.slice(0, -1);
+    updateDisplay();
 }
 
 // Event listeners for buttons
