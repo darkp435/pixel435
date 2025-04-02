@@ -26,7 +26,7 @@ class Tag {
     }
 }
 
-const colors = [
+const colors: Array<string> = [
     'red',
     'blue',
     'green',
@@ -34,24 +34,21 @@ const colors = [
     'yellow',
     'pink',
     'purple',
-    'light blue'
+    'brown'
 ]
 
-const types = [
+const types: Array<string> = [
     'common',
     'uncommon',
     'rare',
     'epic',
-    'very epic',
     'legendary',
-    'top of legendary',
     'mythic',
     'exotic',
-    'unheard of',
     'secret'
 ]
 
-const fonts = [
+const fonts: Array<string> = [
     'Source Sans 3',
     'Times New Roman',
     'Courier New',
@@ -60,7 +57,12 @@ const fonts = [
     'Open Sans'
 ]
 
-const sizes = [15, 20, 25, 30, 35, 40, 45, 50]
+const sizes: Array<number> = [15, 20, 25, 30, 35, 40, 45, 50]
+
+const colorProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
+const typeProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
+const fontProbability: Array<number> = [0.005, 0.015, 0.03, 0.15, 0.3, 0.5]
+const sizeProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
 
 let randomNum: number
 

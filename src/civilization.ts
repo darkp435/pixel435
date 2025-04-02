@@ -402,6 +402,7 @@ async function rounds(civilization: string, focus: string) {
             await waitForClick()
         } else {
             desc.innerHTML += `<br>Your civilization has crumbled! Made it to round ${round.getRound()} before the ultimate demise of your society.`
+            pointCounter.style.display = 'none'
             button1.style.display = 'none'; button2.style.display = 'none'; button3.style.display = 'none'; button4.style.display = 'none'; button5.style.display = 'none'
             break
         }
