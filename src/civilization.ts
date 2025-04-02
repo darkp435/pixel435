@@ -18,6 +18,7 @@ class Round {
     private hasTribute: boolean
     private faminePotential: boolean
     private builtLess: boolean
+    private immunity: boolean
 
     constructor(civilization: string, pts: number, focus: string) {
         this.civilization = civilization
@@ -29,27 +30,56 @@ class Round {
         this.hasTribute = false
         this.faminePotential = false
         this.builtLess = false
+        this.immunity = false
     }
 
-    newRound() {
+    public async newRound(): Promise<void> {
         this.roundNum++
+        if (this.happiness <= 0) {
+            this.revolution()
+        } else if (this.roundNum % 10 === 0) {
+            this.raid()
+        } else if (this.roundNum % 5 === 0) {
+            await this.waterChoice()
+        } else {
+            randevent = Math.floor(Math.random() * 10)
+            switch (randevent) {
+                case 0: this.plague(); break
+                case 1: this.flood(); break
+                case 2: this.trade(); break    
+                case 3: await this.gold(); break
+                case 4: this.waterShortage(); break
+                case 5: await this.buy(); break
+                case 6: this.farms(); break
+                case 7: this.tornado(); break
+                case 8: await this.resources(); break
+            }
+        }
     }
 
-    getRound() {
+    public getRound(): number {
         return this.roundNum
     }
 
-    getPts() {
+    public getPts(): number {
         return this.pts
     }
 
-    plague() {
+    private plague(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Plague`
-        desc.innerHTML = 'Your civilization was hit with a heavy plague.<br>Lost 2 points.'
-        this.pts -= 2
+
+        if (!this.immunity) {
+            desc.innerHTML = "Your civilization was hit with a heavy plague.<br>Lost 4 points."
+            this.pts -= 4
+            this.immunity = true
+        } else {
+            desc.innerHTML = "Your civilization was hit with a plague but your people already developed immunity for it, but after it, it seemed to wear off...<br>Lost 1 point."
+            this.pts--
+            this.immunity = false
+        }
     }
 
-    flood() {
+    private flood(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Flood`
         switch (this.civilization) {
             case 'floodplains': 
@@ -66,7 +96,7 @@ class Round {
         }   
     }
 
-    waterChoice() {
+    private waterChoice(): Promise<void> {
         roundCount.innerHTML = `Round ${this.roundNum}: Water Situation`
         desc.innerHTML = 'You discover that you have an excess supply of water. What do you want to do with the exccess water?'
         button1.style.display = 'flex'
@@ -90,7 +120,7 @@ class Round {
         })
     }
 
-    gold() {
+    private gold(): Promise<void> {
         roundCount.innerHTML = `Round ${this.roundNum}: Gold!`
         desc.innerHTML = 'You struck gold, a valuable resource! What would you like to do with it?'
         button1.style.display = 'flex'
@@ -122,7 +152,7 @@ class Round {
         })
     }
 
-    raid() {
+    private raid(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Raid`
         if (this.hasTribute) {
             desc.innerHTML = "The civilization is trying to raid you, and they found your tribute and took it and left. At least it didn't crumble...<br>No points gained or lost."
@@ -136,7 +166,7 @@ class Round {
         }
     }
 
-    trade() {
+    private trade(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Trading`
         if (this.focus === 'trading') {
             desc.innerHTML = "Being focused on trading, you naturally learnt how to negotiate and bargain, and trading was your expertise.<br>Gained 5 points."
@@ -147,7 +177,7 @@ class Round {
         }
     }
 
-    waterShortage() {
+    private waterShortage(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Water Shortage`
         let random = Math.floor(Math.random() * 3) + 2 // generate number between 2 and 4 inclusive so that this is a risk
 
@@ -160,12 +190,13 @@ class Round {
         }
     }
 
-    revolution() {
+    private revolution(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Revolution`
-        desc.innerHTML = "Due to your bad decisions, your people don't want to be ruled by you. They plotted a revolution and you have been overthrown by your people.<br>Maybe hoarding that gold all to yourself wasn't a good idea...?<br>Due to this, you are no longer in charge of your civilization, but at least they have a new leader now that could probably manage a civilization better than you, right?"
+        desc.innerHTML = "Due to your bad decisions, your people don't want to be ruled by you. They plotted a revolution against you, you barely stopped it, but the damage had been done.<br>Lost 10 points."
+        this.pts -= 10
     }
 
-    buy() {
+    private buy(): Promise<void> {
         roundCount.innerHTML = `Round ${this.roundNum}: Build`
         desc.innerHTML = "Your people ask for you to build some things to benefit the civilization more. What do you wish to build?"
         button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'; button4.style.display = 'flex', button5.style.display = 'flex'
@@ -209,7 +240,7 @@ class Round {
         })
     }
 
-    farms() {
+    private farms(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Farm Success`
         switch (this.civilization) {
             case 'floodplains':
@@ -227,7 +258,7 @@ class Round {
         }
     }
 
-    tornado() {
+    private tornado(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Tornado`
         if (this.focus === 'building') {
             desc.innerHTML = "A tornado went through your civilization, but since your civilization was specialized in building, it was quite fortified and you also repaired it with ease.<br>Lost 1 point."
@@ -238,7 +269,7 @@ class Round {
         }
     }
 
-    resources() {
+    private resources(): Promise<void> {
         if (this.faminePotential) {
             return new Promise<void>((resolve) => {
                 this.famine()
@@ -317,10 +348,15 @@ class Round {
                         }
                     }
                 })
+            default:
+                return new Promise<void>((resolve) => {
+                    console.log("unknown civilization detected")
+                    resolve()
+                })
         }
     }
 
-    famine() {
+    private famine(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Famine`
         desc.innerHTML = "You had a famine in your civilization and it hit quite hard.<br>Lost 9 points, but your civilization then stocked up on more food."
         this.pts -= 9
@@ -328,7 +364,7 @@ class Round {
     }
 }
 
-function waitForClick(civ: boolean=false, focus: boolean=false) {
+function waitForClick(civ: boolean=false, focus: boolean=false): Promise<string> {
     return new Promise<string>((resolve) => {
         if (civ) {
             button1.onclick = () => resolve('floodplains')
@@ -344,17 +380,15 @@ function waitForClick(civ: boolean=false, focus: boolean=false) {
     })
 }
 
-async function rounds(civilization: string, focus: string) {
-    let round: any
+// pts mapping values may change due to balancing
+const ptsMapping: { floodplains: number, mountains: number, desert: number } = {
+    floodplains: 10,
+    mountains: 8,
+    desert: 5
+}
 
-    switch (civilization) {
-        case 'floodplains': 
-            round = new Round('floodplains', 10, focus); break
-        case 'mountains':
-            round = new Round('mountains', 8, focus); break
-        case 'desert':
-            round = new Round('desert', 5, focus); break
-    }
+async function roundLoop(civilization: string, focus: string) {
+    let round: Round = new Round(civilization, ptsMapping[civilization], focus)
 
     desc.innerHTML = `You have chosen ${civilization}.`
     button1.innerHTML = 'Start'
@@ -369,26 +403,6 @@ async function rounds(civilization: string, focus: string) {
         button4.style.display = 'none'
         button5.style.display = 'none'
         round.newRound()
-
-        if (round.happiness <= 0) {
-            round.revolution()
-            break
-        } else if (round.getRound() % 10 === 0 && round.getRound() !== 0) {
-            round.raid()
-        } else if (round.getRound() % 5 === 0 && round.getRound() !== 0) {
-            await round.waterChoice()
-        } else {
-            randevent = Math.floor(Math.random() * 7)
-            switch (randevent) {
-                case 0: round.plague(); break
-                case 1: round.flood(); break
-                case 2: round.trade(); break    
-                case 3: await round.gold(); break
-                case 4: round.waterShortage(); break
-                case 5: await round.buy(); break
-                case 6: round.farms(); break
-            }
-        }
 
         if (round.getPts() > 0) {
             button1.style.display = 'flex'
@@ -423,7 +437,7 @@ async function startGame() {
     button3.innerHTML = 'Raiding'
     let focus: string = await waitForClick(false, true)
 
-    rounds(civ, focus)
+    roundLoop(civ, focus)
 }
 
 button1.onclick = () => startGame()
