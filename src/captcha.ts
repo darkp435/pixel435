@@ -3,7 +3,7 @@ let q = document.getElementById('question') as HTMLElement,
     homepg = document.getElementById('homepg') as HTMLElement,
     containerImg = document.querySelector('.container-img') as HTMLDivElement
 
-function complete(back) {
+function complete(back: HTMLAnchorElement) {
     let index = 1
     let canContinue = false
     document.getElementById('bat')!.remove()
@@ -44,7 +44,7 @@ function complete(back) {
     }
 }
 
-function incorrect(back) {
+function incorrect(back: HTMLElement) {
     document.getElementById('bat')!.remove()
     document.getElementById('baseball')!.remove()
     q.innerHTML = 'Incorrect. You failed the test. You are a robot.'
@@ -141,13 +141,13 @@ function code() {
                 hex4.onclick = () => answers("Complaining does absolutely nothing, cry about your captcha failure now.")
                 skip.onclick = () => finish()
 
-                function answers(message) {
+                function answers(message: string) {
                     hex1.remove(); hex2.remove(); hex3.remove(); hex4.remove(); skip.remove()
                     q.innerHTML = message
                     back.style.display = 'block'
                 }
 
-            } else if (this.value === "dead beef"){
+            } else if (verify.value === "dead beef"){
                 alert("Nice try, but that's not the code, that's just the hexadecimal placeholder.")
             } else {
                 verify.remove()

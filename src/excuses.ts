@@ -158,7 +158,7 @@ const school = [
     "I had a critical appointment to keep.",
 ]
 
-function generateExcuse(type) { 
+function generateExcuse(type: string) { 
     let randomIndex = Math.floor(Math.random() * excuses.length) // arrays are same size so it just use the first one
 
     switch (type) {
