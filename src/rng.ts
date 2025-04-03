@@ -1,4 +1,5 @@
 const result = document.getElementById('result') as HTMLDivElement
+const rollButton = document.getElementById('roll-button') as HTMLButtonElement
 
 class Tag {
     private color: string
@@ -11,7 +12,6 @@ class Tag {
         this.type = type
         this.size = size
         this.font = font
-        return this
     }
 
     display() {
@@ -59,13 +59,34 @@ const fonts: Array<string> = [
 
 const sizes: Array<number> = [15, 20, 25, 30, 35, 40, 45, 50]
 
-const colorProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
-const typeProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
-const fontProbability: Array<number> = [0.005, 0.015, 0.03, 0.15, 0.3, 0.5]
-const sizeProbability: Array<number> = [0.001, 0.003, 0.006, 0.01, 0.03, 0.15, 0.3, 0.5]
+const colorProbability: Array<number> = [0.5, 0.8, 0.95, 0.98, 0.99, 0.996, 0.999]
+const typeProbability: Array<number> = [0.5, 0.8, 0.95, 0.98, 0.99, 0.996, 0.999]
+const fontProbability: Array<number> = [0.5, 0.8, 0.95, 0.98, 0.995]
+const sizeProbability: Array<number> = [0.5, 0.8, 0.95, 0.98, 0.99, 0.996, 0.999]
 
-let randomNum: number
+let chosenColor: string
+let chosenType: string
+let chosenFont: string
+let chosenSize: number
 
-document.getElementById('roll-button')!.onclick = () => {
-    // another placeholder
+function getRandomisedIndex(thresholds: Array<number>): number {
+    let randomised: number = Math.random()
+    return thresholds.findIndex(t => randomised < t) ?? thresholds.length - 1
+}
+
+rollButton.onclick = () => {
+    chosenColor = colors[getRandomisedIndex(colorProbability)]
+    chosenType = types[getRandomisedIndex(typeProbability)]
+    chosenFont = fonts[getRandomisedIndex(fontProbability)]
+    chosenSize = sizes[getRandomisedIndex(sizeProbability)]
+    
+    let result = new Tag(chosenColor, chosenType, chosenSize, chosenFont)
+
+
+    rollButton.disabled = true
+
+    setTimeout(() => {
+        result.display()
+        rollButton.disabled = false
+    }, 500);
 }

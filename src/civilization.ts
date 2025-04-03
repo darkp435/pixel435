@@ -7,6 +7,7 @@ const desc = document.getElementById('desc') as HTMLElement
 const roundCount = document.getElementById('round-count') as HTMLElement
 const pointCounter = document.getElementById('point-counter') as HTMLElement
 let randevent: number
+let round: Round
 
 class Round {
     private civilization: string
@@ -19,11 +20,13 @@ class Round {
     private faminePotential: boolean
     private builtLess: boolean
     private immunity: boolean
+    private difficulty: string
 
-    constructor(civilization: string, pts: number, focus: string) {
+    constructor(civilization: string, pts: number, focus: string, difficulty: string) {
         this.civilization = civilization
         this.pts = pts
         this.focus = focus
+        this.difficulty = difficulty
         this.roundNum = 0
         this.emergencyWater = false
         this.happiness = 3
@@ -37,6 +40,14 @@ class Round {
         this.roundNum++
         if (this.happiness <= 0) {
             this.revolution()
+        } else if (this.roundNum % 30 === 0 && this.difficulty === 'hard') {
+            this.asteroid()
+        } else if (this.roundNum % 15 === 0) {
+            if (this.difficulty === 'hard') {
+                this.thermonuclearWarhead()
+            } else {
+                this.celebrations()
+            }
         } else if (this.roundNum % 10 === 0) {
             this.raid()
         } else if (this.roundNum % 5 === 0) {
@@ -103,12 +114,19 @@ class Round {
         button2.style.display = 'flex'
 
         button1.innerHTML = 'Irrigate the crops'
-        button2.innerHTML = 'Save the water (in case of emergency)'
+
+        if (this.emergencyWater) {
+            button2.innerHTML = "Save the water - already excess water"
+            button2.disabled = true
+        } else {
+            button2.innerHTML = "Save the water"
+        }
         
         return new Promise<void>((resolve) => {
             button1.onclick = () => {
                 desc.innerHTML = 'You irrigate the crops and they seem to grow a lot better.<br>Gained 3 points.'
                 this.pts += 3
+                button2.disabled = false
                 resolve()
             }
 
@@ -264,7 +282,7 @@ class Round {
             desc.innerHTML = "A tornado went through your civilization, but since your civilization was specialized in building, it was quite fortified and you also repaired it with ease.<br>Lost 1 point."
             this.pts--
         } else {
-            desc.innerHTML = "A tornado did a major toll on your civilization, and you don't see that much recovery soon.<br>Lost 5 points."
+            desc.innerHTML = "A tornado did a major toll on your civilization, and you don't see much recovery anytime soon.<br>Lost 5 points."
             this.pts -= 5
         }
     }
@@ -362,9 +380,27 @@ class Round {
         this.pts -= 9
         this.faminePotential = false
     }
+
+    private thermonuclearWarhead(): void {
+        roundCount.innerHTML = `Round ${this.roundNum}: Thermonuclear Warhead`
+        desc.innerHTML = "Oh no! Another civilization just invented a thermonuclear warhead and detonated it on you!<br>Lost 20 points."
+        this.pts -= 20
+    }
+
+    private asteroid(): void {
+        roundCount.innerHTML = `Round ${this.roundNum}: Asteroid`
+        desc.innerHTML = "A gigantic asteroid from outer space and hit your civilization.<br>Lost 30 points."
+        this.pts -= 30
+    }
+
+    private celebrations(): void {
+        roundCount.innerHTML = `Round ${this.roundNum}: Celebrations`
+        desc.innerHTML = "You have made it this far, and another civilization wanted to congratulate you for it.<br>Gained 5 points."
+        this.pts += 5
+    }
 }
 
-function waitForClick(civ: boolean=false, focus: boolean=false): Promise<string> {
+function waitForClick(civ: boolean=false, focus: boolean=false, difficulty: boolean=false): Promise<string> {
     return new Promise<string>((resolve) => {
         if (civ) {
             button1.onclick = () => resolve('floodplains')
@@ -374,6 +410,10 @@ function waitForClick(civ: boolean=false, focus: boolean=false): Promise<string>
             button1.onclick = () => resolve('building')
             button2.onclick = () => resolve('trading')
             button3.onclick = () => resolve('raiding')
+        } else if (difficulty) {
+            button1.onclick = () => resolve('easy')
+            button2.onclick = () => resolve('normal')
+            button3.onclick = () => resolve('hard')
         } else {
             button1.onclick = () => resolve('')
         }
@@ -381,14 +421,14 @@ function waitForClick(civ: boolean=false, focus: boolean=false): Promise<string>
 }
 
 // pts mapping values may change due to balancing
-const ptsMapping: { floodplains: number, mountains: number, desert: number } = {
+const ptsMapping: { [key: string]: number } = {
     floodplains: 10,
     mountains: 8,
     desert: 5
 }
 
-async function roundLoop(civilization: string, focus: string) {
-    let round: Round = new Round(civilization, ptsMapping[civilization], focus)
+async function roundLoop(civilization: string, focus: string, difficulty: string) {
+    round = new Round(civilization, ptsMapping[civilization], focus, difficulty)
 
     desc.innerHTML = `You have chosen ${civilization}.`
     button1.innerHTML = 'Start'
@@ -402,7 +442,7 @@ async function roundLoop(civilization: string, focus: string) {
         button3.style.display = 'none'
         button4.style.display = 'none'
         button5.style.display = 'none'
-        round.newRound()
+        await round.newRound()
 
         if (round.getPts() > 0) {
             button1.style.display = 'flex'
@@ -429,15 +469,21 @@ async function startGame() {
     button2.innerHTML = 'Mountains'
     button3.innerHTML = 'Desert'
     button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'
-    let civ: string = await waitForClick(true, false)
+    let civ: string = await waitForClick(true, false, false)
 
     desc.innerHTML = 'Choose the focus of your civilization'
     button1.innerHTML = 'Building'
     button2.innerHTML = 'Trading'
     button3.innerHTML = 'Raiding'
-    let focus: string = await waitForClick(false, true)
+    let focus: string = await waitForClick(false, true, false)
 
-    roundLoop(civ, focus)
+    desc.innerHTML = 'Choose the difficulty'
+    button1.innerHTML = 'Easy'
+    button2.innerHTML = 'Normal'
+    button3.innerHTML = 'Hard'
+    let difficulty: string = await waitForClick(false, false, true)
+
+    roundLoop(civ, focus, difficulty)
 }
 
 button1.onclick = () => startGame()

@@ -9,7 +9,7 @@ if [ -d "dist" ]; then
 fi
 
 # Create the dist directory and subdirectories
-mkdir -p dist/src dist/styles dist/assets
+mkdir -p dist/public dist/styles dist/assets
 
 # Copy HTML files
 cp index.html dist/index.html
