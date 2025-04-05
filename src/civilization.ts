@@ -21,6 +21,8 @@ class Round {
     private builtLess: boolean
     private immunity: boolean
     private difficulty: string
+    private tornadoEffects: number
+    private respect: number
 
     constructor(civilization: string, pts: number, focus: string, difficulty: string) {
         this.civilization = civilization
@@ -34,6 +36,8 @@ class Round {
         this.faminePotential = false
         this.builtLess = false
         this.immunity = false
+        this.tornadoEffects = 0
+        this.respect = 0
     }
 
     public async newRound(): Promise<void> {
@@ -65,6 +69,11 @@ class Round {
                 case 7: this.tornado(); break
                 case 8: await this.resources(); break
             }
+        }
+
+        if (this.tornadoEffects > 0) {
+            this.pts -= 1
+            this.tornadoEffects -= 1
         }
     }
 
@@ -132,6 +141,7 @@ class Round {
 
             button2.onclick = () => {
                 desc.innerHTML = 'You decide to think for the future and save your excess water for later use. Perhaps this might come in useful later...?<br>No points gained or lost.'
+                this.respect++
                 this.emergencyWater = true
                 resolve()
             }
@@ -158,12 +168,14 @@ class Round {
 
             button2.onclick = () => {
                 desc.innerHTML = "You decided that sharing is caring and gave them all to the people, because communism. The people seemed happy, but you didn't really get anything.<br>No points gained or lost, but this may not be a bad thing..."
+                this.respect += 2
                 this.happiness++
                 resolve()
             }
 
             button3.onclick = () => {
                 desc.innerHTML = "The gods should be honored was what you decided. Your people agree with this as that will probably be the best use scenario - satisfying the gods so that they could protect you, but this will only come in handy later...<br>No points gained or lost."
+                this.respect++
                 this.hasTribute = true
                 resolve()
             }
@@ -284,6 +296,13 @@ class Round {
         } else {
             desc.innerHTML = "A tornado did a major toll on your civilization, and you don't see much recovery anytime soon.<br>Lost 5 points."
             this.pts -= 5
+            if (this.difficulty === 'hard') {
+                this.tornadoEffects = 4
+            } else if (this.difficulty === 'normal') {
+                this.tornadoEffects = 3
+            } else {
+                this.tornadoEffects = 2
+            }
         }
     }
 
