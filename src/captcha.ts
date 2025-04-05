@@ -112,43 +112,7 @@ function code() {
         if (event.key === 'Enter') {
             if (verify.value === "527718300") {
                 verify.remove()
-                q.innerHTML = 'What is the value for 1, in hexadecimal?'
-                let hex1 = document.createElement('p'),
-                    hex2 = document.createElement('p'),
-                    hex3 = document.createElement('p'),
-                    hex4 = document.createElement('p'),
-                    skip = document.createElement('p')
-                skip.id = 'skip'
-                hex1.id = 'hex1'
-                hex2.id = 'hex2'
-                hex3.id = 'hex3'
-                hex4.id = 'hex4'
-                hex1.innerHTML = '31'
-                hex2.innerHTML = "I don't knooowwwww"
-                hex3.innerHTML = '*uses chatgpt for the answer*'
-                hex4.innerHTML = 'This is pointless.'
-                homepg.style.marginBottom = '1000000px'
-                skip.innerHTML = 'Skip'
-                skip.style.fontSize = '5px'
-                containerImg.appendChild(hex1)
-                containerImg.appendChild(hex2)
-                containerImg.appendChild(hex3)
-                containerImg.appendChild(hex4)
-                document.querySelector('.hidden-glass')!.appendChild(skip)
-                hex1.onclick = () => answers("Correct, but only robots know hexadecimal, which means you failed.")
-                hex2.onclick = () => answers("Not knowing the answer is an obvious fail.")
-                hex3.onclick = () => answers("Using AI for the answer? I don't think so, you failed.")
-                hex4.onclick = () => answers("Complaining does absolutely nothing, cry about your captcha failure now.")
-                skip.onclick = () => finish()
-
-                function answers(message: string) {
-                    hex1.remove(); hex2.remove(); hex3.remove(); hex4.remove(); skip.remove()
-                    q.innerHTML = message
-                    back.style.display = 'block'
-                }
-
-            } else if (verify.value === "dead beef"){
-                alert("Nice try, but that's not the code, that's just the hexadecimal placeholder.")
+                hexadecimalCode()
             } else {
                 verify.remove()
                 q.innerHTML = 'Incorrect, you failed the captcha on level 4 and you are a robot!'
@@ -156,6 +120,43 @@ function code() {
             }
         }
     })
+}
+
+function hexadecimalCode() {
+    q.innerHTML = 'What is the value for 1, in hexadecimal?'
+    let hex1 = document.createElement('p'),
+        hex2 = document.createElement('p'),
+        hex3 = document.createElement('p'),
+        hex4 = document.createElement('p'),
+        skip = document.createElement('p')
+    skip.id = 'skip'
+    hex1.id = 'hex1'
+    hex2.id = 'hex2'
+    hex3.id = 'hex3'
+    hex4.id = 'hex4'
+    hex1.innerHTML = '31'
+    hex2.innerHTML = "I don't knooowwwww"
+    hex3.innerHTML = '*uses chatgpt for the answer*'
+    hex4.innerHTML = 'This is pointless.'
+    homepg.style.marginBottom = '1000000px'
+    skip.innerHTML = 'Skip'
+    skip.style.fontSize = '5px'
+    containerImg.appendChild(hex1)
+    containerImg.appendChild(hex2)
+    containerImg.appendChild(hex3)
+    containerImg.appendChild(hex4)
+    document.querySelector('.hidden-glass')!.appendChild(skip)
+    hex1.onclick = () => answers("Correct, but only robots know hexadecimal, which means you failed.")
+    hex2.onclick = () => answers("Not knowing the answer is an obvious fail.")
+    hex3.onclick = () => answers("Using AI for the answer? I don't think so, you failed.")
+    hex4.onclick = () => answers("Complaining does absolutely nothing, cry about your captcha failure now.")
+    skip.onclick = () => finish()
+
+    function answers(message: string) {
+        hex1.remove(); hex2.remove(); hex3.remove(); hex4.remove(); skip.remove()
+        q.innerHTML = message
+        back.style.display = 'block'
+    }
 }
 
 function finish() {
