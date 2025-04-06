@@ -7,8 +7,9 @@ const desc = document.getElementById('desc') as HTMLElement
 const roundCount = document.getElementById('round-count') as HTMLElement
 const pointCounter = document.getElementById('point-counter') as HTMLElement
 let round: Round
+let specialMethods: SpecialMethods
 
-function setButtonText(text1='', text2='', text3='', text4='', text5=''): void {
+function setButtonText(text1: string='', text2: string='', text3: string='', text4: string='', text5: string=''): void {
     button1.innerHTML = text1
     button2.innerHTML = text2
     button3.innerHTML = text3
@@ -21,6 +22,50 @@ function setSituation(roundNumber: number, roundBrief: string, roundDesc: string
     desc.innerHTML = roundDesc
 }
 
+// only methods relating to difficulties are here
+class DifficultyMethods {
+    public roundInstance: Round
+
+    constructor(roundInstance: Round) {
+        this.roundInstance = roundInstance
+    }
+
+    public celebrations(): void {
+        setSituation(this.roundInstance.getRound(), 'Celebrations', "You've made it this far, and got celebrations from another civilization.<br>Gained 5 points.")
+        this.roundInstance.addPts(5)
+    }
+
+    public thermonuclearWarhead(): void {
+        setSituation(this.roundInstance.getRound(), 'Thermonuclear Warhead', 'Oh no! Another civilization launhed a thermonuclear warhead at you!<br>Lost 20 points.')
+        this.roundInstance.addPts(-20)
+    }
+
+    public asteroid(): void {
+        setSituation(this.roundInstance.getRound(), 'Asteroid!', 'A gigantic asteroid from outer space hit your civilization.<br>Lost 30 points.')
+        this.roundInstance.addPts(-30)
+    }
+
+    public gifts(): void {
+        setSituation(this.roundInstance.getRound(), 'Gifts!', 'A lot of civilizations came and gave you gifts.<br>Gained 10 points.')
+        this.roundInstance.addPts(10)
+    }
+}
+
+// methods relating to tokens are here
+class SpecialMethods {
+    public roundInstance: Round
+
+    constructor(roundInstance: Round) {
+        this.roundInstance = roundInstance
+    }
+
+    public tokensToPts() {
+        this.roundInstance.addPts(3)
+        this.roundInstance.modifyTokens(-1)
+    }
+}
+
+// civilization object and only the standard methods here
 class Round {
     private civilization: string
     private pts: number
@@ -35,7 +80,9 @@ class Round {
     private difficulty: string
     private tornadoEffects: number
     private respect: number
-    
+    private tokens: number 
+    private specialMethods: DifficultyMethods
+
     constructor(civilization: string, pts: number, focus: string, difficulty: string) {
         this.civilization = civilization
         this.pts = pts
@@ -50,6 +97,8 @@ class Round {
         this.immunity = false
         this.tornadoEffects = 0
         this.respect = 0
+        this.tokens = 0
+        this.specialMethods = new DifficultyMethods(this)
     }
 
     private async randomEvent() {
@@ -65,14 +114,15 @@ class Round {
             case 6: this.farms(); break
             case 7: this.tornado(); break
             case 8: await this.resources(); break
+            case 9: this.famine(); break
         }
     }
 
     public async newRound(): Promise<void> {
         this.roundNum++
         if (this.happiness <= 0) this.revolution()
-        else if (this.roundNum % 30 === 0 && this.difficulty === 'hard') this.asteroid() 
-        else if (this.roundNum % 15 === 0) this.difficulty === 'hard' ? this.thermonuclearWarhead() : this.celebrations()
+        else if (this.roundNum % 30 === 0) this.difficulty === 'hard' ? this.specialMethods.asteroid() : this.specialMethods.gifts()
+        else if (this.roundNum % 15 === 0) this.difficulty === 'hard' ? this.specialMethods.thermonuclearWarhead() : this.specialMethods.celebrations()
         else if (this.roundNum % 10 === 0) this.raid()
         else if (this.roundNum % 5 === 0) await this.waterChoice()
         else await this.randomEvent()
@@ -83,6 +133,7 @@ class Round {
         }
     }
 
+    // getters/modifiers to control access
     public getRound(): number {
         return this.roundNum
     }
@@ -91,6 +142,19 @@ class Round {
         return this.pts
     }
 
+    public addPts(ptsToAdd: number): void {
+        this.pts += ptsToAdd
+    }
+
+    public getTokens(): number {
+        return this.tokens
+    }
+
+    public modifyTokens(tokensToModify: number): void {
+        this.tokens += tokensToModify // plus operator can also simulate minus hence why we use it
+    }
+
+    // actual methods start here
     private plague(): void {
         setSituation(this.roundNum, 'Plague', !this.immunity ? 'Your civilization was hit by a heavy plague.<br>Lost 4 points' : 'Your civilization was hit by a plague but you had immunity.<br>Lost 1 point.')
 
@@ -292,7 +356,7 @@ class Round {
             })
         }
 
-        setSituation(round.roundNum, 'Resource Crisis', 'You are runnign out of resources. Whhat do you do?')
+        setSituation(round.roundNum, 'Resource Crisis', 'You are running out of resources. What do you do?')
         if (this.builtLess) {
             return new Promise<void>((resolve) => {
                 desc.innerHTML = "You almost had a resource crisis, but due to you building less, it didn't really have an effect, but after that, your building speed has gone back to normal.<br>Lost 1 point."
@@ -376,21 +440,6 @@ class Round {
         this.pts -= 9
         this.faminePotential = false
     }
-
-    private thermonuclearWarhead(): void {
-        setSituation(this.roundNum, 'Thermonuclear Warhead', 'Oh no! Another civilization launhed a thermonuclear warhead at you!<br>Lost 20 points.')
-        this.pts -= 20
-    }
-
-    private asteroid(): void {
-        setSituation(this.roundNum, 'Asteroid!', 'A gigantic asteroid from outer space hit your civilization.<br>Lost 30 points.')
-        this.pts -= 30
-    }
-
-    private celebrations(): void {
-        setSituation(this.roundNum, 'Celebrations', "You've made it this far, and got celebrations from another civilization.<br>Gained 5 points.")
-        this.pts += 5
-    }
 }
 
 function waitForClick(civ: boolean=false, focus: boolean=false, difficulty: boolean=false): Promise<string> {
@@ -422,6 +471,7 @@ const ptsMapping: { [key: string]: number } = {
 
 async function roundLoop(civilization: string, focus: string, difficulty: string) {
     round = new Round(civilization, ptsMapping[civilization], focus, difficulty)
+    specialMethods = new SpecialMethods(round)
 
     desc.innerHTML = `You have chosen ${civilization}.`
     button1.innerHTML = 'Start'

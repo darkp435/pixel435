@@ -159,6 +159,38 @@ function hexadecimalCode() {
     }
 }
 
+function completeCaptcha() {
+    q.textContent = 'CAPTCHA complete! You are a human! (Note: all feedback will be piped to /dev/null)'
+    let bee = document.createElement('img')
+    bee.src = '../assets/bee.png'
+    homepg.className = 'flex justify-center'
+    containerImg.appendChild(bee)
+}
+
+function finalQuestion() {
+    q.textContent = 'Evaluate 0.1 + 0.2'
+    let final = document.createElement('input')
+    final.type = 'text'
+    final.placeholder = 'Input answer here'
+    final.style.color = 'green'
+    final.style.padding = '15px'
+    final.style.margin = '20px'
+    final.style.fontSize = '15px'
+    final.className = 'bg-black text-white border border-white'
+    containerImg.appendChild(final)
+    final.addEventListener("keydown", (finalEvent) => {
+        if (finalEvent.key == 'Enter') {
+            final.remove()
+            if (final.value == (0.1 + 0.2).toString()) {
+                completeCaptcha()
+            } else {
+                q.textContent = "That's not the correct answer. As a result, you failed."
+                back.style.display = 'block'
+            }
+        }
+    })
+}
+
 function finish() {
     q.innerHTML = 'To confirm that you are not a robot, enter the secondary confirmatory code.'
     document.getElementById('hex1')!.remove()
@@ -183,31 +215,7 @@ function finish() {
         if (event2.key == 'Enter') {
             if (concode.value == rancode.toString()) {
                 concode.remove()
-                q.textContent = 'Evaluate 0.1 + 0.2'
-                let final = document.createElement('input')
-                final.type = 'text'
-                final.placeholder = 'Input answer here'
-                final.style.color = 'green'
-                final.style.padding = '15px'
-                final.style.margin = '20px'
-                final.style.fontSize = '15px'
-                final.className = 'bg-black text-white border border-white'
-                containerImg.appendChild(final)
-                final.addEventListener("keydown", (finalEvent) => {
-                    if (finalEvent.key == 'Enter') {
-                        final.remove()
-                        if (final.value == (0.1 + 0.2).toString()) {
-                            q.textContent = 'CAPTCHA complete! You are a human! (Note: all feedback will be piped to /dev/null)'
-                            let bee = document.createElement('img')
-                            bee.src = '../assets/bee.png'
-                            homepg.className = 'flex justify-center'
-                            containerImg.appendChild(bee)
-                        } else {
-                            q.textContent = "That's not the correct answer. As a result, you failed."
-                            back.style.display = 'block'
-                        }
-                    }
-                })
+                finalQuestion()
             } else {
                 concode.remove()
                 q.innerHTML = 'Verification code incorrect. You are a robot.'
