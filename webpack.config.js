@@ -1,55 +1,64 @@
-// Generated using webpack-cli https://github.com/webpack/webpack-cli
-
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
-const isProduction = process.env.NODE_ENV == 'production';
-
-
-const stylesHandler = 'style-loader';
-
-
-
-const config = {
-    entry: './src/index.ts',
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-    },
-    plugins: [
-        // Add your plugins here
-        // Learn more about plugins from https://webpack.js.org/configuration/plugins/
-    ],
-    module: {
-        rules: [
-            {
-                test: /\.(ts|tsx)$/i,
-                loader: 'ts-loader',
-                exclude: ['/node_modules/'],
-            },
-            {
-                test: /\.css$/i,
-                use: [stylesHandler, 'css-loader', 'postcss-loader'],
-            },
-            {
-                test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
-                type: 'asset',
-            },
-
-            // Add your rules for custom modules here
-            // Learn more about loaders from https://webpack.js.org/loaders/
-        ],
-    },
-    resolve: {
-        extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
-    },
+const entries = {
+  asi: './src/asi.ts',
+  calc: './src/calc.ts',
+  captcha: './src/captcha.ts',
+  civilization: './src/civilization.ts',
+  excuses: './src/excuses.ts',
+  fence: './src/fence.ts',
+  rng: './src/rng.ts',
 };
 
-module.exports = () => {
-    if (isProduction) {
-        config.mode = 'production';
-        
-        
-    } else {
-        config.mode = 'development';
-    }
-    return config;
+const htmlPages = [
+  new HtmlWebpackPlugin({
+    filename: 'index.html',
+    template: './index.html',
+    chunks: [], // index.html has no associated ts
+  }),
+  ...Object.keys(entries).map(name => new HtmlWebpackPlugin({
+    filename: `${name}.html`,
+    template: `./src/${name}.html`,
+    chunks: [name],
+  })),
+];
+
+module.exports = {
+  entry: entries,
+  output: {
+    filename: '[name].js', // asi.js, calc.js, etc.
+    path: path.resolve(__dirname, 'dist'),
+    clean: true,
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: {
+            loader: 'ts-loader',
+            options: {
+                configFile: path.resolve(__dirname, 'tsconfig.json')
+            },
+        },
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
+      },
+    ],
+  },
+  plugins: [
+    ...htmlPages,
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'styles', to: 'styles' },
+      ],
+    }),
+  ],
 };
