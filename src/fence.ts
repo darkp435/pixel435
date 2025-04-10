@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 let automatic: boolean = localStorage.getItem('auto') === 'true' || false;
 let power: number = parseInt(localStorage.getItem('power') || "0")
 const autoButton = document.getElementById('auto') as HTMLButtonElement

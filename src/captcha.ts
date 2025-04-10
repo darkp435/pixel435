@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 let q = document.getElementById('question') as HTMLElement,
     game = document.getElementById('captchatitle') as HTMLElement,
     homepg = document.getElementById('homepg') as HTMLElement,

@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 const result = document.getElementById('result') as HTMLDivElement
 const rollButton = document.getElementById('roll-button') as HTMLButtonElement
 

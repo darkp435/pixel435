@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 let currentInput = '';
 let operator = '';
 let previousInput = '';

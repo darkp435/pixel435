@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 function addSemicolons() {
     let times = 0
     let code = (document.getElementById("codeInput") as HTMLInputElement)?.value ?? "";

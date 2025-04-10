@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 const entries = {
   asi: './src/asi.ts',
@@ -10,6 +11,7 @@ const entries = {
   excuses: './src/excuses.ts',
   fence: './src/fence.ts',
   rng: './src/rng.ts',
+  users: './src/users.ts'
 };
 
 const htmlPages = [
@@ -49,15 +51,35 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader', 'postcss-loader'],
+        use: [
+          MiniCssExtractPlugin.loader, 
+          'css-loader', 
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                config: path.resolve(__dirname, 'postcss.config.js'),
+                plugins: [
+                  require('tailwindcss'),
+                  require('autoprefixer'),
+                ],
+              },
+            },
+          },
+        ],
       },
     ],
   },
   plugins: [
     ...htmlPages,
+    new MiniCssExtractPlugin({
+      filename: 'styles/styles.css'
+    }),
+
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'styles', to: 'styles' },
+        { from: 'styles/civilization.css', to: 'styles/civilization.css' },
+        { from: 'styles/fence.css', to: 'styles/fence.css' },
       ],
     }),
   ],

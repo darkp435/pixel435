@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 function beginGame(repeat: boolean) {
     // Timer variables
     let startTime = Date.now();

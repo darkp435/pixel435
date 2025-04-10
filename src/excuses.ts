@@ -1,3 +1,5 @@
+import '../styles/styles.css';
+
 // note: all the arrays containing excuses must have equal size or else the function will not work
 const excuses = [
     "My dog ate my computer.",
