@@ -51,7 +51,7 @@ function calculate() {
         default:
             return;
     }
-    let chance = Math.round(Math.random() * 5)
+    const chance = Math.round(Math.random() * 5)
     computation = computation + chance;
     currentInput = computation.toString()
     operator = '';
@@ -92,7 +92,7 @@ document.getElementById('ac')!.onclick = clearAll;
 document.getElementById('de')!.onclick = deleteLast;
 
 setInterval(() => {
-    let randint = Math.round(Math.random() * 1000)
+    const randint = Math.round(Math.random() * 1000)
     if (randint === 42) {
         document.body.style.transition = "opacity 1s";
         document.body.style.opacity = "0";

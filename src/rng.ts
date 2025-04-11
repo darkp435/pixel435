@@ -72,7 +72,7 @@ let chosenFont: string
 let chosenSize: number
 
 function getRandomisedIndex(thresholds: Array<number>): number {
-    let randomised: number = Math.random()
+    const randomised: number = Math.random()
     return thresholds.findIndex(t => randomised < t) ?? thresholds.length - 1
 }
 
@@ -82,7 +82,7 @@ rollButton.onclick = () => {
     chosenFont = fonts[getRandomisedIndex(fontProbability)]
     chosenSize = sizes[getRandomisedIndex(sizeProbability)]
     
-    let result = new Tag(chosenColor, chosenType, chosenSize, chosenFont)
+    const result = new Tag(chosenColor, chosenType, chosenSize, chosenFont)
 
 
     rollButton.disabled = true

@@ -161,7 +161,7 @@ const school = [
 ]
 
 function generateExcuse(type: string) { 
-    let randomIndex = Math.floor(Math.random() * excuses.length) // arrays are same size so it just use the first one
+    const randomIndex = Math.floor(Math.random() * excuses.length) // arrays are same size so it just use the first one
 
     switch (type) {
         case 'excuse':

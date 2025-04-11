@@ -6,7 +6,7 @@ const autoButton = document.getElementById('auto') as HTMLButtonElement
 const burnButton = document.getElementById('burn') as HTMLButtonElement
 const count = document.getElementById('burnCount') as HTMLElement
 const upgrade1Button = document.getElementById('upgrade') as HTMLButtonElement
-let savedBurns: number = parseInt(localStorage.getItem('burns') || "0")
+const savedBurns: number = parseInt(localStorage.getItem('burns') || "0")
 let burns: number = savedBurns
 let counter: number = power + 1
 let burnerPower: number = parseInt(localStorage.getItem('burner') || "0") + 100
@@ -14,7 +14,7 @@ const burnerUpgrade = document.getElementById('burner-upgrade') as HTMLButtonEle
 let suspicion: number = parseInt(localStorage.getItem('suspicion') || "0")
 const lowerSuspicion = document.getElementById('lower-suspicion') as HTMLButtonElement
 let agreement: boolean = localStorage.getItem('agreement') === 'true' || false
-let agreeButton = document.getElementById('agreement-button') as HTMLButtonElement
+const agreeButton = document.getElementById('agreement-button') as HTMLButtonElement
 const info = document.getElementById('info') as HTMLElement
 const details = document.getElementById('details') as HTMLElement
 
@@ -33,7 +33,7 @@ function save() {
     localStorage.setItem('agreement', agreement ? 'true' : 'false');
 }
 
-let raiseSuspicion = setInterval(() => {
+const raiseSuspicion = setInterval(() => {
     if (!agreement) {
         if (burns > 999) {
             suspicion++;
@@ -48,7 +48,7 @@ let raiseSuspicion = setInterval(() => {
 
             localStorage.clear();
 
-            let gameOverMessage = document.createElement('div');
+            const gameOverMessage = document.createElement('div');
             gameOverMessage.textContent = 'You have lost! Restart to try again (save wiped).';
             document.body.appendChild(gameOverMessage);
         }

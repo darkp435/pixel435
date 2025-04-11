@@ -17,7 +17,6 @@ bower_components/
 Thumbs.db
 logs/
 *.log
-eslint.config.mjs
 styles/output.css
 dist/
 # ignore all files in src that might've been compiled

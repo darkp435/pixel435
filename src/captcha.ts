@@ -1,6 +1,6 @@
 import '../styles/styles.css';
 
-let q = document.getElementById('question') as HTMLElement,
+const q = document.getElementById('question') as HTMLElement,
     game = document.getElementById('captchatitle') as HTMLElement,
     homepg = document.getElementById('homepg') as HTMLElement,
     containerImg = document.querySelector('.container-img') as HTMLDivElement
@@ -12,24 +12,28 @@ function complete(back: HTMLAnchorElement) {
     document.getElementById('baseball')!.remove()
     q.innerHTML = 'Please select glass.'
     // creation of glass elements
-    let glass1 = document.createElement('input'),
+    const glass1 = document.createElement('input'),
         glass2 = document.createElement('input'),
         glass3 = document.createElement('input'),
         glass4 = document.createElement('input'),
         glass5 = document.createElement('input'),
         realGlass = document.createElement('p')
-    let glasses = [glass1, glass2, glass3, glass4, glass5]
+    const glasses = [glass1, glass2, glass3, glass4, glass5]
     realGlass.style.color = 'black'
     realGlass.className = 'cursor-default'
     realGlass.innerHTML = 'glass'
     realGlass.id = 'realGlass'
     realGlass.onclick = () => canContinue = true
-    for (let i of glasses) {
+    for (const i of glasses) {
         i.type = 'image'
         i.style.border = '2px solid white'
         i.style.padding = '2px'
         i.onclick = () => {
-            (canContinue) ? succeed(glasses) : fail(glasses)
+            if (canContinue) {
+                succeed(glasses)
+            } else {
+                fail(glasses)
+            }
         }
         containerImg.appendChild(i)
         i.src = '../assets/glass' + index + '.png'
@@ -57,13 +61,13 @@ function succeed(glasses: Array<HTMLElement>) {
     q.innerHTML = "Select the game."
     glasses.forEach(e => e.remove())
     document.getElementById('realGlass')!.remove()
-    let game1 = document.createElement('p'),
+    const game1 = document.createElement('p'),
         game2 = document.createElement('p'),
         game3 = document.createElement('p'),
         game4 = document.createElement('p')
-    let games = [game1, game2, game3, game4]
+    const games = [game1, game2, game3, game4]
 
-    for (let x of games) {
+    for (const x of games) {
         x.innerHTML = 'game'
         x.style.cursor = 'pointer'
         x.style.margin = '5px'
@@ -87,9 +91,9 @@ function next() {
     back.style.display = 'none'
     game.onclick = null
     q.innerHTML = 'Please agree to the terms and conditions.'
-    let terms = document.getElementById('terms') as HTMLElement
+    const terms = document.getElementById('terms') as HTMLElement
     terms.className = 'block'
-    let agree = document.createElement('button')
+    const agree = document.createElement('button')
     agree.innerHTML = 'I have painstakingly read the terms and conditions, and hereby sign it with my blood.'
     agree.onclick = () => agree.style.display = 'none'
     agree.id = 'agree'
@@ -101,7 +105,7 @@ function code() {
     document.getElementById('terms')!.remove()
     document.getElementById('agree')!.remove()
     q.innerHTML = 'Please enter the verification code.'
-    let verify = document.createElement('input')
+    const verify = document.createElement('input')
     verify.type = 'text'
     verify.placeholder = 'Enter your verification code here' 
     verify.className = 'bg-black text-white border border-white'
@@ -126,7 +130,7 @@ function code() {
 
 function hexadecimalCode() {
     q.innerHTML = 'What is the value for 1, in hexadecimal?'
-    let hex1 = document.createElement('p'),
+    const hex1 = document.createElement('p'),
         hex2 = document.createElement('p'),
         hex3 = document.createElement('p'),
         hex4 = document.createElement('p'),
@@ -163,7 +167,7 @@ function hexadecimalCode() {
 
 function completeCaptcha() {
     q.textContent = 'CAPTCHA complete! You are a human! (Note: all feedback will be piped to /dev/null)'
-    let bee = document.createElement('img')
+    const bee = document.createElement('img')
     bee.src = '../assets/bee.png'
     homepg.className = 'flex justify-center'
     containerImg.appendChild(bee)
@@ -171,7 +175,7 @@ function completeCaptcha() {
 
 function finalQuestion() {
     q.textContent = 'Evaluate 0.1 + 0.2'
-    let final = document.createElement('input')
+    const final = document.createElement('input')
     final.type = 'text'
     final.placeholder = 'Input answer here'
     final.style.color = 'green'
@@ -200,7 +204,7 @@ function finish() {
     document.getElementById('hex3')!.remove()
     document.getElementById('hex4')!.remove() 
     document.getElementById('skip')!.remove()
-    let concode = document.createElement('input')
+    const concode = document.createElement('input')
     concode.type = 'text'
     concode.placeholder = 'Enter your verification code here'
     concode.className = 'bg-black text-white border border-white'
@@ -227,7 +231,7 @@ function finish() {
     })
 }
 
-let back = document.createElement('a')
+const back = document.createElement('a')
 back.href = 'captcha.html'
 back.innerHTML = 'Try again'
 back.style.display = 'none'

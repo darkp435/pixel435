@@ -2,16 +2,16 @@ import '../styles/styles.css';
 
 function beginGame(repeat: boolean) {
     // Timer variables
-    let startTime = Date.now();
+    const startTime = Date.now();
     const paragraph = document.querySelector('p') as HTMLParagraphElement
 
     // Update timer every 100ms
-    let timerInterval = setInterval(() => {
-        let elapsedTime = Date.now() - startTime;
+    const timerInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
         paragraph!.innerHTML = `Time: ${(elapsedTime / 1000).toFixed(3)} seconds`;
     }, 10);
 
-    let emailLabel = document.createElement('label'),
+    const emailLabel = document.createElement('label'),
         emailInput = document.createElement('input'),
         userLabel = document.createElement('label'),
         userInput = document.createElement('input'),
@@ -20,29 +20,29 @@ function beginGame(repeat: boolean) {
         confirmLabel = document.createElement('label'),
         confirmInput = document.createElement('input')
 
-    let failure = document.createElement('div');
+    const failure = document.createElement('div');
     failure.innerHTML = 'Failed to create user account.<br>';
     document.body.appendChild(failure);
     failure.style.display = 'none';
     failure.className = 'text-red-500 mt-4';
 
     document.getElementById('start')!.innerHTML = 'Create account';
-    let game1Elements = [emailLabel, emailInput, userLabel, userInput, passwordLabel, passwordInput, confirmLabel, confirmInput];
+    const game1Elements = [emailLabel, emailInput, userLabel, userInput, passwordLabel, passwordInput, confirmLabel, confirmInput];
 
     // Get high score from localStorage (if any)
-    let highScore = localStorage.getItem('highScore');
+    const highScore = localStorage.getItem('highScore');
     if (highScore) {
         paragraph.innerHTML = `High score: ${highScore} seconds`;
     }
 
     // add onclick function for button so that the user could finish the game
     document.getElementById('start')!.onclick = () => {
-        let userVal = userInput.value,
-            passwordVal = passwordInput.value,
-            confirmVal = confirmInput.value,
-            passwordsMatch,
-            emailValid,
-            userLength;
+        const userVal = userInput.value
+        const passwordVal = passwordInput.value
+        const confirmVal = confirmInput.value
+        let passwordsMatch
+        let emailValid
+        let userLength
 
         const isValidPassword =
             passwordVal === confirmVal &&
@@ -75,13 +75,13 @@ function beginGame(repeat: boolean) {
 
         paragraph.style.display = 'block';
         if (passwordsMatch && emailValid && userLength) {
-            for (let element of game1Elements) {
+            for (const element of game1Elements) {
                 element.remove();
             }
             document.getElementById('start')!.remove();
             clearInterval(timerInterval);
-            let elapsedTime = Date.now() - startTime;
-            let elapsedSeconds = (elapsedTime / 1000).toFixed(2);
+            const elapsedTime = Date.now() - startTime;
+            const elapsedSeconds = (elapsedTime / 1000).toFixed(2);
             failure.style.display = 'none';
             paragraph.innerHTML = `Congrats, you have beat the game in ${elapsedSeconds} seconds.`;
 
@@ -109,7 +109,7 @@ function beginGame(repeat: boolean) {
         }
     };
 
-    for (let element of game1Elements) {
+    for (const element of game1Elements) {
         document.querySelector('#division')!.appendChild(element);
         element.style.margin = '8px 0';
     }
@@ -155,6 +155,6 @@ function beginGame(repeat: boolean) {
 }
 
 document.getElementById('start')!.onclick = () => {
-    let repeat = true;
+    const repeat = true;
     beginGame(repeat);
 };

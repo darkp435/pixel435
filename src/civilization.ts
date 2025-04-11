@@ -9,7 +9,6 @@ const desc = document.getElementById('desc') as HTMLElement
 const roundCount = document.getElementById('round-count') as HTMLElement
 const pointCounter = document.getElementById('point-counter') as HTMLElement
 let round: Round
-let specialMethods: SpecialMethods
 
 function setButtonText(text1: string='', text2: string='', text3: string='', text4: string='', text5: string=''): void {
     button1.innerHTML = text1
@@ -53,7 +52,9 @@ class DifficultyMethods {
     }
 }
 
-// methods relating to tokens are here
+// methods relating to tokens are here, temporary placeholder
+// TODO: add more methods and use the class
+/*
 class SpecialMethods {
     public roundInstance: Round
 
@@ -66,6 +67,7 @@ class SpecialMethods {
         this.roundInstance.modifyTokens(-1)
     }
 }
+*/
 
 // civilization object and only the standard methods here
 class Round {
@@ -104,7 +106,7 @@ class Round {
     }
 
     private async randomEvent() {
-        let randevent: number = Math.floor(Math.random() * 10)
+        const randevent: number = Math.floor(Math.random() * 10)
 
         switch (randevent) {
             case 0: this.plague(); break
@@ -123,9 +125,19 @@ class Round {
     public async newRound(): Promise<void> {
         this.roundNum++
         if (this.happiness <= 0) this.revolution()
-        else if (this.roundNum % 30 === 0) this.difficulty === 'hard' ? this.specialMethods.asteroid() : this.specialMethods.gifts()
-        else if (this.roundNum % 15 === 0) this.difficulty === 'hard' ? this.specialMethods.thermonuclearWarhead() : this.specialMethods.celebrations()
-        else if (this.roundNum % 10 === 0) this.raid()
+        else if (this.roundNum % 30 === 0) {
+            if (this.difficulty === 'hard') {
+                this.specialMethods.asteroid()
+            } else {
+                this.specialMethods.gifts()
+            }
+        } else if (this.roundNum % 15 === 0) {
+            if (this.difficulty === 'hard') {
+                this.specialMethods.thermonuclearWarhead()
+            } else {
+                this.specialMethods.celebrations()
+            }
+        } else if (this.roundNum % 10 === 0) this.raid()
         else if (this.roundNum % 5 === 0) await this.waterChoice()
         else await this.randomEvent()
 
@@ -263,7 +275,7 @@ class Round {
 
     private waterShortage(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Water Shortage`
-        let random = Math.floor(Math.random() * 3) + 2 // generate number between 2 and 4 inclusive so that this is a risk
+        const random = Math.floor(Math.random() * 3) + 2 // generate number between 2 and 4 inclusive so that this is a risk
 
         if (this.emergencyWater) {
             desc.innerHTML = 'There has been a water shortage, but luckily, you thought beforehand and used the preserved water.'
@@ -417,7 +429,7 @@ class Round {
                     }
 
                     button2.onclick = () => {
-                        let randevent = Math.floor(Math.random() * 2)
+                        const randevent = Math.floor(Math.random() * 2)
                         if (randevent === 0) {
                             desc.innerHTML = "You decided to raid another civilization and lost.<br>Lost 6 points."
                             this.pts -= 6
@@ -473,7 +485,7 @@ const ptsMapping: { [key: string]: number } = {
 
 async function roundLoop(civilization: string, focus: string, difficulty: string) {
     round = new Round(civilization, ptsMapping[civilization], focus, difficulty)
-    specialMethods = new SpecialMethods(round)
+    // const specialMethods = new SpecialMethods(round)
 
     desc.innerHTML = `You have chosen ${civilization}.`
     button1.innerHTML = 'Start'
@@ -514,19 +526,19 @@ async function startGame() {
     button2.innerHTML = 'Mountains'
     button3.innerHTML = 'Desert'
     button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'
-    let civ: string = await waitForClick(true, false, false)
+    const civ: string = await waitForClick(true, false, false)
 
     desc.innerHTML = 'Choose the focus of your civilization'
     button1.innerHTML = 'Building'
     button2.innerHTML = 'Trading'
     button3.innerHTML = 'Raiding'
-    let focus: string = await waitForClick(false, true, false)
+    const focus: string = await waitForClick(false, true, false)
 
     desc.innerHTML = 'Choose the difficulty'
     button1.innerHTML = 'Easy'
     button2.innerHTML = 'Normal'
     button3.innerHTML = 'Hard'
-    let difficulty: string = await waitForClick(false, false, true)
+    const difficulty: string = await waitForClick(false, false, true)
 
     roundLoop(civ, focus, difficulty)
 }
