@@ -8,6 +8,9 @@ const button5 = document.getElementById('button5') as HTMLButtonElement
 const desc = document.getElementById('desc') as HTMLElement
 const roundCount = document.getElementById('round-count') as HTMLElement
 const pointCounter = document.getElementById('point-counter') as HTMLElement
+const tokenCounter = document.getElementById('token-counter') as HTMLDivElement
+const respectCounter = document.getElementById('respect-counter') as HTMLDivElement
+const exchangeTokens = document.getElementById('exchange-tokens') as HTMLButtonElement
 let round: Round
 
 function setButtonText(text1: string='', text2: string='', text3: string='', text4: string='', text5: string=''): void {
@@ -46,15 +49,23 @@ class DifficultyMethods {
         this.roundInstance.addPts(-30)
     }
 
+    public UFO(): void {
+        setSituation(this.roundInstance.getRound(), 'UFO!', 'A UFO came around and absolutely obliterated your civilization.<br>Lost 50 points.')
+        this.roundInstance.addPts(-50)
+    }
+
     public gifts(): void {
         setSituation(this.roundInstance.getRound(), 'Gifts!', 'A lot of civilizations came and gave you gifts.<br>Gained 10 points.')
         this.roundInstance.addPts(10)
     }
+
+    public goodUFO(): void {
+        setSituation(this.roundInstance.getRound(), 'Alien Gifts!', 'A foreign civilization from another planet personally visited you to give you some gifts.<br>Gained 20 points.')
+        this.roundInstance.addPts(20)
+    }
 }
 
-// methods relating to tokens are here, temporary placeholder
-// TODO: add more methods and use the class
-/*
+// methods relating to tokens are here
 class SpecialMethods {
     public roundInstance: Round
 
@@ -63,11 +74,12 @@ class SpecialMethods {
     }
 
     public tokensToPts() {
-        this.roundInstance.addPts(3)
-        this.roundInstance.modifyTokens(-1)
+        if (this.roundInstance.getTokens() > 0) {
+            this.roundInstance.addPts(3)
+            this.roundInstance.modifyTokens(-1)
+        }
     }
 }
-*/
 
 // civilization object and only the standard methods here
 class Round {
@@ -125,7 +137,13 @@ class Round {
     public async newRound(): Promise<void> {
         this.roundNum++
         if (this.happiness <= 0) this.revolution()
-        else if (this.roundNum % 30 === 0) {
+        else if (this.roundNum % 50 === 0) {
+            if (this.difficulty === 'hard') {
+                this.specialMethods.UFO()
+            } else {
+                this.specialMethods.goodUFO()
+            }
+        } else if (this.roundNum % 30 === 0) {
             if (this.difficulty === 'hard') {
                 this.specialMethods.asteroid()
             } else {
@@ -166,6 +184,10 @@ class Round {
 
     public modifyTokens(tokensToModify: number): void {
         this.tokens += tokensToModify // plus operator can also simulate minus hence why we use it
+    }
+
+    public getRespect(): number {
+        return this.respect
     }
 
     // actual methods start here
@@ -485,13 +507,18 @@ const ptsMapping: { [key: string]: number } = {
 
 async function roundLoop(civilization: string, focus: string, difficulty: string) {
     round = new Round(civilization, ptsMapping[civilization], focus, difficulty)
-    // const specialMethods = new SpecialMethods(round)
+    const specialMethods = new SpecialMethods(round)
 
     desc.innerHTML = `You have chosen ${civilization}.`
     button1.innerHTML = 'Start'
     button2.style.display = 'none'
     button3.style.display = 'none'
     await waitForClick()
+    exchangeTokens.style.display = 'flex'
+
+    exchangeTokens.onclick = () => {
+        specialMethods.tokensToPts()
+    }
 
     while (true) {
         button1.style.display = 'none'
@@ -510,6 +537,8 @@ async function roundLoop(civilization: string, focus: string, difficulty: string
 
             button1.innerHTML = 'Continue to next round'
             pointCounter.innerHTML = `Current points: ${round.getPts()}`
+            tokenCounter.innerHTML = `Gold: ${round.getTokens()}`
+            respectCounter.innerHTML = `Respect: ${round.getRespect()}`
             await waitForClick()
         } else {
             desc.innerHTML += `<br>Your civilization has crumbled! Made it to round ${round.getRound()} before the ultimate demise of your society.`
