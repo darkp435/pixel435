@@ -35,5 +35,7 @@ This project is powered by passion, curiosity, passion, and curiosity. To keep t
   (Procrastination should be negated.)
 - **Do not engage in flame wars unless they are genuinely interesting, like pineapple on pizza, in which case it is acceptable.**
   (Oh yeah pineapple on pizza is bad.)
+- **No weapons of mass destruction, this includes, this includes thermonuclear warheads**
+  (Just, no.)
 
 Let’s build cool stuff, keep things fun, and never, ever take ourselves too seriously. I might add emojis later but I can't be bothered right now.
