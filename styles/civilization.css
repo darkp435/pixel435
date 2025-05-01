@@ -59,3 +59,7 @@ button {
     border-radius: 2px;
     height: 30;
 }
+
+#exchange-tokens {
+    display: none;
+}
