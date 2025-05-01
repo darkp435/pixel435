@@ -1,5 +1,3 @@
-import '../styles/styles.css';
-
 const button1 = document.getElementById('button1') as HTMLButtonElement
 const button2 = document.getElementById('button2') as HTMLButtonElement
 const button3 = document.getElementById('button3') as HTMLButtonElement

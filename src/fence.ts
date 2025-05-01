@@ -1,5 +1,3 @@
-import '../styles/styles.css';
-
 let automatic: boolean = localStorage.getItem('auto') === 'true' || false;
 let power: number = parseInt(localStorage.getItem('power') || "0")
 const autoButton = document.getElementById('auto') as HTMLButtonElement
@@ -18,13 +16,13 @@ const agreeButton = document.getElementById('agreement-button') as HTMLButtonEle
 const info = document.getElementById('info') as HTMLElement
 const details = document.getElementById('details') as HTMLElement
 
-function updateCounter() {
+function updateCounter(): void {
     count.innerHTML = `Ashes: ${burns}`;
     counter = power + 1;
     document.getElementById('suspicion')!.innerHTML = `James' suspicion: ${suspicion}`;
 }
 
-function save() {
+function save(): void {
     localStorage.setItem('burns', burns.toString());
     localStorage.setItem('power', power.toString());
     localStorage.setItem('auto', automatic.toString());
