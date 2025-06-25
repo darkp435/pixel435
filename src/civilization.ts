@@ -11,6 +11,24 @@ const respectCounter = document.getElementById('respect-counter') as HTMLDivElem
 const exchangeTokens = document.getElementById('exchange-tokens') as HTMLButtonElement
 let round: Round
 
+enum Focus {
+    Building,
+    Trading,
+    Raiding
+}
+
+enum Difficulty {
+    Easy,
+    Normal,
+    Hard
+}
+
+enum CivType {
+    Floodplains,
+    Desert,
+    Mountains
+}
+
 function setButtonText(text1: string='', text2: string='', text3: string='', text4: string='', text5: string=''): void {
     button1.innerHTML = text1
     button2.innerHTML = text2
@@ -81,9 +99,9 @@ class SpecialMethods {
 
 // civilization object and only the standard methods here
 class Round {
-    private civilization: string
+    private civilization: CivType
     private pts: number
-    private focus: string
+    private focus: Focus
     private roundNum: number
     private emergencyWater: boolean
     private happiness: number
@@ -91,13 +109,13 @@ class Round {
     private faminePotential: boolean
     private builtLess: boolean
     private immunity: boolean
-    private difficulty: string
+    private difficulty: Difficulty
     private tornadoEffects: number
     private respect: number
     private tokens: number 
     private specialMethods: DifficultyMethods
 
-    constructor(civilization: string, pts: number, focus: string, difficulty: string) {
+    constructor(civilization: CivType, pts: number, focus: Focus, difficulty: Difficulty) {
         this.civilization = civilization
         this.pts = pts
         this.focus = focus
@@ -136,19 +154,19 @@ class Round {
         this.roundNum++
         if (this.happiness <= 0) this.revolution()
         else if (this.roundNum % 50 === 0) {
-            if (this.difficulty === 'hard') {
+            if (this.difficulty === Difficulty.Hard) {
                 this.specialMethods.UFO()
             } else {
                 this.specialMethods.goodUFO()
             }
         } else if (this.roundNum % 30 === 0) {
-            if (this.difficulty === 'hard') {
+            if (this.difficulty === Difficulty.Hard) {
                 this.specialMethods.asteroid()
             } else {
                 this.specialMethods.gifts()
             }
         } else if (this.roundNum % 15 === 0) {
-            if (this.difficulty === 'hard') {
+            if (this.difficulty === Difficulty.Hard) {
                 this.specialMethods.thermonuclearWarhead()
             } else {
                 this.specialMethods.celebrations()
@@ -201,15 +219,15 @@ class Round {
     private flood(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Flood`
         switch (this.civilization) {
-            case 'floodplains': 
+            case CivType.Floodplains: 
                 desc.innerHTML = 'The floods absolutely devoured your civilization with no mercy.<br>Lost 4 points.'
                 this.pts -= 4
                 break
-            case 'mountains':
+            case CivType.Mountains:
                 desc.innerHTML = 'The floods did a minor toll on your civilization.<br>Lost 2 points.'
                 this.pts -= 2
                 break
-            case 'desert':
+            case CivType.Desert:
                 desc.innerHTML = 'You heard news that a flood happened nearby. However, being in the desert, there is a lack of water.<br>No points gained or lost.'
                 break
         }   
@@ -276,7 +294,7 @@ class Round {
         if (this.hasTribute) {
             desc.innerHTML = "The civilization is trying to raid you, and they found your tribute and took it and left. At least it didn't crumble...<br>No points gained or lost."
             this.hasTribute = false
-        } else if (this.focus === 'raiding') {
+        } else if (this.focus === Focus.Raiding) {
             desc.innerHTML = "The civilization is trying to raid you, but you, being raiders, defended yourself quite well.<br>Lost 2 points."
             this.pts -= 2
         } else {
@@ -287,10 +305,10 @@ class Round {
 
     private trade(): void {
         setSituation(this.roundNum, 'Trades', 
-            this.focus === 'trading' ? "You bargained with the civlization and got some extra.<br>Gained 5 points." : "You made some trades.<br>Gained 3 points."
+            this.focus === Focus.Trading ? "You bargained with the civlization and got some extra.<br>Gained 5 points." : "You made some trades.<br>Gained 3 points."
         )
         
-        this.focus += (this.focus === 'trading' ? 5 : 3)
+        this.focus += (this.focus === Focus.Trading ? 5 : 3)
     }
 
     private waterShortage(): void {
@@ -353,15 +371,15 @@ class Round {
     private farms(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Farm Success`
         switch (this.civilization) {
-            case 'floodplains':
+            case CivType.Floodplains:
                 desc.innerHTML = "Your farms grew extremely successful, and paired with the fertile soil of the floodplains, you gained a lot.<br>Gained 5 points."
                 this.pts += 5
                 break
-            case 'mountains':
+            case CivType.Mountains:
                 desc.innerHTML = "Your farms grew quite successful in your civilization.<br>Gained 3 points."
                 this.pts += 3
                 break
-            case 'desert':
+            case CivType.Desert:
                 desc.innerHTML = "Your farms grew a little successful in your civilization.<br>Gained 1 point."
                 this.pts++
                 break
@@ -370,14 +388,14 @@ class Round {
 
     private tornado(): void {
         roundCount.innerHTML = `Round ${this.roundNum}: Tornado`
-        if (this.focus === 'building') {
+        if (this.focus === Focus.Building) {
             desc.innerHTML = "A tornado went through your civilization, but since your civilization was specialized in building, it was quite fortified and you also repaired it with ease.<br>Lost 1 point."
             this.pts--
         } else {
             desc.innerHTML = "A tornado did a major toll on your civilization, and you don't see much recovery anytime soon.<br>Lost 5 points."
             this.pts -= 5
-            if (this.difficulty === 'hard') this.tornadoEffects = 4
-            else if (this.difficulty === 'normal') this.tornadoEffects = 3
+            if (this.difficulty === Difficulty.Hard) this.tornadoEffects = 4
+            else if (this.difficulty === Difficulty.Normal) this.tornadoEffects = 3
             else this.tornadoEffects = 2
         }
     }
@@ -405,7 +423,7 @@ class Round {
         button1.innerHTML = 'Do nothing'
 
         switch (this.focus) {
-            case 'building':
+            case Focus.Building:
                 button2.innerHTML = "Build less"
                 return new Promise<void>((resolve) => {
                     button1.onclick = () => {
@@ -422,7 +440,7 @@ class Round {
                     }
                 })
 
-            case 'trading':
+            case Focus.Trading:
                 button2.innerHTML = "Trade with other civilizations"
                 return new Promise<void>((resolve) => {
                     button1.onclick = () => {
@@ -438,7 +456,7 @@ class Round {
                     }
                 })
 
-            case 'raiding':
+            case Focus.Raiding:
                 button2.innerHTML = "Raid another civilization"
 
                 return new Promise<void>((resolve) => {
@@ -476,24 +494,30 @@ class Round {
     }
 }
 
-function waitForClick(civ: boolean=false, focus: boolean=false, difficulty: boolean=false): Promise<string> {
-    return new Promise<string>((resolve) => {
-        if (civ) {
-            button1.onclick = () => resolve('floodplains')
-            button2.onclick = () => resolve('mountains')
-            button3.onclick = () => resolve('desert')
-        } else if (focus) {
-            button1.onclick = () => resolve('building')
-            button2.onclick = () => resolve('trading')
-            button3.onclick = () => resolve('raiding')
-        } else if (difficulty) {
-            button1.onclick = () => resolve('easy')
-            button2.onclick = () => resolve('normal')
-            button3.onclick = () => resolve('hard')
-        } else {
+function waitForClick(civ: boolean=false, focus: boolean=false, difficulty: boolean=false): Promise<any> {
+    if (civ) {
+        return new Promise<CivType>((resolve) => {
+            button1.onclick = () => resolve(CivType.Floodplains)
+            button2.onclick = () => resolve(CivType.Mountains)
+            button3.onclick = () => resolve(CivType.Desert)
+        })
+    } else if (focus) {
+        return new Promise<Focus>((resolve) => {
+            button1.onclick = () => resolve(Focus.Building)
+            button2.onclick = () => resolve(Focus.Trading)
+            button3.onclick = () => resolve(Focus.Raiding)
+        })
+    } else if (difficulty) {
+        return new Promise<Difficulty>((resolve) => {
+            button1.onclick = () => resolve(Difficulty.Easy)
+            button2.onclick = () => resolve(Difficulty.Normal)
+            button3.onclick = () => resolve(Difficulty.Hard)
+        })
+    } else {
+        return new Promise<string>((resolve) => {
             button1.onclick = () => resolve('')
-        }
-    })
+        })
+    }
 }
 
 // pts mapping values may change due to balancing
@@ -503,7 +527,7 @@ const ptsMapping: { [key: string]: number } = {
     desert: 5
 }
 
-async function roundLoop(civilization: string, focus: string, difficulty: string) {
+async function roundLoop(civilization: CivType, focus: Focus, difficulty: Difficulty) {
     round = new Round(civilization, ptsMapping[civilization], focus, difficulty)
     const specialMethods = new SpecialMethods(round)
 
@@ -553,19 +577,19 @@ async function startGame() {
     button2.innerHTML = 'Mountains'
     button3.innerHTML = 'Desert'
     button1.style.display = 'flex'; button2.style.display = 'flex'; button3.style.display = 'flex'
-    const civ: string = await waitForClick(true, false, false)
+    const civ: CivType = await waitForClick(true, false, false)
 
     desc.innerHTML = 'Choose the focus of your civilization'
     button1.innerHTML = 'Building'
     button2.innerHTML = 'Trading'
     button3.innerHTML = 'Raiding'
-    const focus: string = await waitForClick(false, true, false)
+    const focus: Focus = await waitForClick(false, true, false)
 
     desc.innerHTML = 'Choose the difficulty'
     button1.innerHTML = 'Easy'
     button2.innerHTML = 'Normal'
     button3.innerHTML = 'Hard'
-    const difficulty: string = await waitForClick(false, false, true)
+    const difficulty: Difficulty = await waitForClick(false, false, true)
 
     roundLoop(civ, focus, difficulty)
 }
