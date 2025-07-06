@@ -7,7 +7,7 @@ This project is powered by passion, curiosity, passion, and curiosity. To keep t
 
 - **Be kind to one another.**
   *If you can’t, still do. I have low standards.*
-- **No jerks. Seriously.**
+- **No jerks.**
   *If you’re not sure if you're being a jerk, you are, and that shall not be tolerated.*
 - **Help other people if you can, we want to be supportive**
   *But also, **don’t be that person who asks for help without even trying first**.*
