@@ -11,7 +11,8 @@ const entries = {
   excuses: './src/excuses.ts',
   fence: './src/fence.ts',
   rng: './src/rng.ts',
-  users: './src/users.ts'
+  users: './src/users.ts',
+  minesweeper: './src/minesweeper.ts'
 };
 
 const htmlPages = [
