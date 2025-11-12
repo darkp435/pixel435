@@ -14,19 +14,19 @@ function randint(low: number, high: number) {
 }
 
 class Square {
-    constructor(public isFlagged: boolean, public type: SquareType) {}
+    constructor(public isFlagged: boolean, public type: SquareType) { }
 }
 
 // Describes the position of a square on the grid
 class Vec2 {
-    constructor(public col: number, public row: number) {}
+    constructor(public col: number, public row: number) { }
     compare(other: Vec2): boolean {
         return other.col == this.col && other.row == this.row;
     }
 }
 
 function areSameCoords(coords: Array<Vec2>, newCoord: Vec2): boolean {
-    for (let coord of coords) {
+    for (const coord of coords) {
         if (coord.compare(newCoord)) return true
     }
 
@@ -37,14 +37,14 @@ class Minesweeper {
     private grid: Array<Array<Square>>
 
     constructor(firstclick: Vec2) {
-        let taken: Array<Vec2> = []
+        const taken: Array<Vec2> = []
 
         // Generate the mines
         for (let i = 0; i < MINES; i++) {
             let index: Vec2
             do {
                 index = new Vec2(randint(0, SQUARES_PER_COLUMN - 1), randint(0, SQUARES_PER_ROW - 1))
-            } while (areSameCoords(taken, index))
+            } while (areSameCoords(taken, index) || index.compare(firstclick))
 
             taken.push(index)
         }
@@ -57,33 +57,43 @@ class Minesweeper {
             }
         }
 
-        for (let mine of taken) {
+        for (const mine of taken) {
             console.log(mine.col + ', ' + mine.row)
             this.grid[mine.col][mine.row].type = SquareType.Mine
             const el = document.getElementById(mine.col.toString() + '-' + mine.row.toString()) as HTMLButtonElement
             el.addEventListener('click', () => { el.textContent = 'B' })
         }
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    newBtnClicked(pos: Vec2) {
+
+    }
 }
 
-// Init the squares; the HTML is too verbose
-function onBtnClick(id: string) {
+interface OnBtnClick {
+    (id: string): void
+    game?: Minesweeper
+}
+
+const onBtnClick: OnBtnClick = (id: string) => {
     if (onBtnClick.game === undefined) {
-        onBtnClick.game
+        const col = parseInt(id.split('-')[0])
+        const row = parseInt(id.split('-')[1])
+        const initCoords = new Vec2(col, row)
+        onBtnClick.game = new Minesweeper(initCoords)
     }
 
-    if (isFirstButton) {
-        const initCoords = 
-        game = new Minesweeper(id.split(""))
-    }
+
 }
+
+onBtnClick.game = undefined
 
 for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
     for (let j = 0; j < SQUARES_PER_ROW; j++) {
         const square = document.createElement('button');
         square.id = i.toString() + '-' + j.toString();
         square.className = 'mnsw-btn';
-        let isFirstButton = true
         square.addEventListener('click', (ev) => {
             const target = ev.target as HTMLElement
             onBtnClick(target.id)
