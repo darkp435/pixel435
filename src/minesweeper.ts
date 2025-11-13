@@ -65,9 +65,11 @@ class Minesweeper {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     newBtnClicked(pos: Vec2) {
-
+        const el = this.grid[pos.col][pos.row]
+        if (el.type === SquareType.Mine) {
+            console.log("you lost!")
+        }
     }
 }
 
@@ -82,9 +84,9 @@ const onBtnClick: OnBtnClick = (id: string) => {
         const row = parseInt(id.split('-')[1])
         const initCoords = new Vec2(col, row)
         onBtnClick.game = new Minesweeper(initCoords)
+    } else {
+        onBtnClick.game.newBtnClicked(new Vec2(id.split('-')))
     }
-
-
 }
 
 onBtnClick.game = undefined
