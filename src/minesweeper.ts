@@ -1,4 +1,5 @@
 const container = document.getElementById("main") as HTMLElement
+const flagCounter = document.getElementById("counter") as HTMLParagraphElement
 const SQUARES_PER_ROW = 10
 const SQUARES_PER_COLUMN = 10
 const MINES = 10
@@ -14,7 +15,10 @@ function randint(low: number, high: number) {
 }
 
 class Square {
-    constructor(public isFlagged: boolean, public type: SquareType) { }
+    public revealed
+    constructor(public isFlagged: boolean, public type: SquareType) {
+        this.revealed = false
+    }
 }
 
 // Describes the position of a square on the grid
@@ -33,11 +37,24 @@ function areSameCoords(coords: Array<Vec2>, newCoord: Vec2): boolean {
     return false
 }
 
+function vec2ToElmentId(coord: Vec2) {
+    return coord.col.toString() + '-' + coord.row.toString()
+}
+
+function elmentIdToVec2(coord: string) {
+    return new Vec2(parseInt(coord.split('-')[0]), parseInt(coord.split('-')[1]))
+}
+
 class Minesweeper {
-    private grid: Array<Array<Square>>
+    private grid: Array<Array<Square>>;
+    private flags: number;
+    private tilesLeft: number;
+    private gameEnded: boolean;
 
     constructor(firstclick: Vec2) {
         const taken: Array<Vec2> = []
+        this.flags = MINES
+        this.gameEnded = false
 
         // Generate the mines
         for (let i = 0; i < MINES; i++) {
@@ -48,6 +65,8 @@ class Minesweeper {
 
             taken.push(index)
         }
+
+        this.tilesLeft = SQUARES_PER_COLUMN * SQUARES_PER_ROW - MINES
 
         this.grid = []
         for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
@@ -60,32 +79,114 @@ class Minesweeper {
         for (const mine of taken) {
             console.log(mine.col + ', ' + mine.row)
             this.grid[mine.col][mine.row].type = SquareType.Mine
-            const el = document.getElementById(mine.col.toString() + '-' + mine.row.toString()) as HTMLButtonElement
-            el.addEventListener('click', () => { el.textContent = 'B' })
         }
     }
 
     newBtnClicked(pos: Vec2) {
         const el = this.grid[pos.col][pos.row]
+        if (this.gameEnded || el.isFlagged) return
         if (el.type === SquareType.Mine) {
-            console.log("you lost!")
+            document.getElementById("status")!.textContent = "You lost! You clicked on a mine."
+            this.gameEnded = true
+            return
+        }
+
+        const square = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
+        el.revealed = true
+        square.className = "mnsw-btn mnsw-revealed"
+        this.tilesLeft--
+        square.disabled = true
+
+        let nearbyMines = 0
+        // Left
+        let index = pos.row - 1
+        if (index > -1 && this.grid[pos.col][index].type === SquareType.Mine) nearbyMines++
+        // Right
+        index = pos.row + 1
+        if (index < SQUARES_PER_ROW && this.grid[pos.col][index].type === SquareType.Mine) nearbyMines++
+        // Top
+        index = pos.col - 1
+        if (index > -1 && this.grid[index][pos.row].type === SquareType.Mine) nearbyMines++
+        // Bottom
+        index = pos.col + 1
+        if (index < SQUARES_PER_COLUMN && this.grid[index][pos.row].type === SquareType.Mine) nearbyMines++
+        // Top left, index is now X
+        index = pos.row - 1
+        let indexY = pos.col - 1
+        if (index > -1 && indexY > -1 && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        // Top right
+        index = pos.row + 1
+        indexY = pos.col - 1
+        if (index < SQUARES_PER_ROW && indexY > -1 && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        // Bottom left
+        index = pos.row - 1
+        indexY = pos.col + 1
+        if (index > -1 && indexY < SQUARES_PER_COLUMN && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        // Bottom right
+        index = pos.row + 1
+        indexY = pos.col + 1
+        if (index < SQUARES_PER_ROW && indexY < SQUARES_PER_COLUMN && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        
+        square.textContent = nearbyMines === 0 ? "" : nearbyMines.toString()
+        if (this.tilesLeft === 0) {
+            document.getElementById("status")!.textContent = "You won! Congratulations."
+            this.gameEnded = true
+        }
+    }
+
+    getFlags() {
+        return this.flags;
+    }
+
+    private useFlag(pos: Vec2) {
+        if (this.flags === 0) return;
+        this.flags--;
+        this.grid[pos.col][pos.row].isFlagged = true;
+        const el = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
+        el.textContent = "F";
+        el.classList.add("mnsw-flagged")
+        flagCounter.textContent = `Flags left: ${this.flags}`
+    }
+
+    private removeFlag(pos: Vec2) {
+        this.grid[pos.col][pos.row].isFlagged = false
+        const el = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
+        el.textContent = ""
+        el.classList.remove("mnsw-flagged")
+        this.flags++;
+        flagCounter.textContent = `Flags left: ${this.flags}`
+        
+    }
+
+    toggleFlag(pos: Vec2): void {
+        if (this.grid[pos.col][pos.row].revealed || this.gameEnded) return
+        if (this.grid[pos.col][pos.row].isFlagged) {
+            this.removeFlag(pos)
+        } else {
+            this.useFlag(pos)
         }
     }
 }
 
 interface OnBtnClick {
-    (id: string): void
+    (id: string, rightClick?: boolean): void
     game?: Minesweeper
 }
 
-const onBtnClick: OnBtnClick = (id: string) => {
-    if (onBtnClick.game === undefined) {
-        const col = parseInt(id.split('-')[0])
-        const row = parseInt(id.split('-')[1])
-        const initCoords = new Vec2(col, row)
-        onBtnClick.game = new Minesweeper(initCoords)
+const onBtnClick: OnBtnClick = (id: string, rightClick?: boolean) => {
+    if (!rightClick) {
+        if (onBtnClick.game === undefined) {
+            const col = parseInt(id.split('-')[0])
+            const row = parseInt(id.split('-')[1])
+            const initCoords = new Vec2(col, row)
+            onBtnClick.game = new Minesweeper(initCoords)
+            flagCounter.textContent = `Flags left: ${onBtnClick.game.getFlags()}`
+            onBtnClick.game.newBtnClicked(elmentIdToVec2(id))
+        } else {
+            onBtnClick.game.newBtnClicked(elmentIdToVec2(id))
+        }
     } else {
-        onBtnClick.game.newBtnClicked(new Vec2(id.split('-')))
+        onBtnClick.game?.toggleFlag(elmentIdToVec2(id))
     }
 }
 
@@ -99,6 +200,11 @@ for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
         square.addEventListener('click', (ev) => {
             const target = ev.target as HTMLElement
             onBtnClick(target.id)
+        })
+        square.addEventListener('contextmenu', (ev) => {
+            ev.preventDefault()
+            const target = ev.target as HTMLElement
+            onBtnClick(target.id, true)
         })
         container.appendChild(square);
     }
