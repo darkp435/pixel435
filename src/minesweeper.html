@@ -5,42 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>"Minesweeper"</title>
-    <style>
-        .mnsw-btn {
-            width: 50px;
-            height: 50px;
-            margin: 5px;
-            border-radius: 0px;
-            border-color: black;
-        }
-
-        .mnsw-revealed {
-            background-color: #22b900;
-        }
-
-        .mnsw-flagged {
-            background-color: rgb(255, 242, 0);
-        }
-
-        button:disabled {
-            color: inherit;
-            opacity: 1;
-        }
-
-        button:disabled:hover,
-        button:disabled:active {
-            border-color: black;
-            transform: none;
-            box-shadow: none;
-        }
-
-        #main {
-            display: grid;
-            grid-template-columns: repeat(10, 50px);
-            grid-template-rows: repeat(10, 50px);
-            gap: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="./styles/minesweeper.css">
 </head>
 
 <body>

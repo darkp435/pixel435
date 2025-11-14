@@ -43,18 +43,18 @@ module.exports = {
       {
         test: /\.ts$/,
         use: {
-            loader: 'ts-loader',
-            options: {
-                configFile: path.resolve(__dirname, 'tsconfig.json')
-            },
+          loader: 'ts-loader',
+          options: {
+            configFile: path.resolve(__dirname, 'tsconfig.json')
+          },
         },
         exclude: /node_modules/,
       },
       {
         test: /\.css$/,
         use: [
-          MiniCssExtractPlugin.loader, 
-          'css-loader', 
+          MiniCssExtractPlugin.loader,
+          'css-loader',
           {
             loader: 'postcss-loader',
             options: {
@@ -77,6 +77,7 @@ module.exports = {
       patterns: [
         { from: 'styles/civilization.css', to: 'styles/civilization.css' },
         { from: 'styles/fence.css', to: 'styles/fence.css' },
+        { from: 'styles/minesweeper.css', to: 'styles/minesweeper.css' },
       ],
     }),
   ],

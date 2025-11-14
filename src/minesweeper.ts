@@ -1,13 +1,19 @@
+// Implementation of a modified version of the game "Minesweeper"
+// Creator: darkp435 (GitHub)
+
 const container = document.getElementById("main") as HTMLElement
 const flagCounter = document.getElementById("counter") as HTMLParagraphElement
 const SQUARES_PER_ROW = 10
 const SQUARES_PER_COLUMN = 10
 const MINES = 10
+const FAKE_MINES = 5
+const MAGIC_SQUARES = 3
 
 enum SquareType {
     Blank,
     Rearrange,
-    Mine
+    Mine,
+    FakeMine
 }
 
 function randint(low: number, high: number) {
@@ -50,6 +56,7 @@ class Minesweeper {
     private flags: number;
     private tilesLeft: number;
     private gameEnded: boolean;
+    private fakeMines: Array<Vec2>
 
     constructor(firstclick: Vec2) {
         const taken: Array<Vec2> = []
@@ -66,6 +73,16 @@ class Minesweeper {
             taken.push(index)
         }
 
+        this.fakeMines = []
+        for (let i = 0; i < FAKE_MINES; i++) {
+            let index: Vec2
+            do {
+                index = new Vec2(randint(0, SQUARES_PER_COLUMN - 1), randint(0, SQUARES_PER_ROW - 1))
+            } while (areSameCoords([...taken, ...this.fakeMines], index))
+
+            this.fakeMines.push(index)
+        }
+
         this.tilesLeft = SQUARES_PER_COLUMN * SQUARES_PER_ROW - MINES
 
         this.grid = []
@@ -77,9 +94,19 @@ class Minesweeper {
         }
 
         for (const mine of taken) {
-            console.log(mine.col + ', ' + mine.row)
+            console.log('REAL ' + mine.col + ', ' + mine.row) //! FOR DEVELOPMENT PURPOSES ONLY, REMOVE IN PROD!
             this.grid[mine.col][mine.row].type = SquareType.Mine
         }
+
+        for (const fake of this.fakeMines) {
+            console.log('FAKE' + fake.col + ', ' + fake.row) //! FOR DEVELOPMENT PURPOSES ONLY, REMOVE IN PROD!
+            this.grid[fake.col][fake.row].type = SquareType.FakeMine
+        }
+    }
+
+    // Helper function for determining nearby mines
+    isMine(type: SquareType) {
+        return type === SquareType.FakeMine || type === SquareType.Mine
     }
 
     newBtnClicked(pos: Vec2) {
@@ -100,34 +127,42 @@ class Minesweeper {
         let nearbyMines = 0
         // Left
         let index = pos.row - 1
-        if (index > -1 && this.grid[pos.col][index].type === SquareType.Mine) nearbyMines++
+        if (index > -1 && this.isMine(this.grid[pos.col][index].type)) nearbyMines++
         // Right
         index = pos.row + 1
-        if (index < SQUARES_PER_ROW && this.grid[pos.col][index].type === SquareType.Mine) nearbyMines++
+        if (index < SQUARES_PER_ROW && this.isMine(this.grid[pos.col][index].type)) nearbyMines++
         // Top
         index = pos.col - 1
-        if (index > -1 && this.grid[index][pos.row].type === SquareType.Mine) nearbyMines++
+        if (index > -1 && this.isMine(this.grid[index][pos.row].type)) nearbyMines++
         // Bottom
         index = pos.col + 1
-        if (index < SQUARES_PER_COLUMN && this.grid[index][pos.row].type === SquareType.Mine) nearbyMines++
+        if (index < SQUARES_PER_COLUMN && this.isMine(this.grid[index][pos.row].type)) nearbyMines++
         // Top left, index is now X
         index = pos.row - 1
         let indexY = pos.col - 1
-        if (index > -1 && indexY > -1 && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        if (index > -1 && indexY > -1 && this.isMine(this.grid[indexY][index].type)) nearbyMines++
         // Top right
         index = pos.row + 1
         indexY = pos.col - 1
-        if (index < SQUARES_PER_ROW && indexY > -1 && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        if (index < SQUARES_PER_ROW && indexY > -1 && this.isMine(this.grid[indexY][index].type)) nearbyMines++
         // Bottom left
         index = pos.row - 1
         indexY = pos.col + 1
-        if (index > -1 && indexY < SQUARES_PER_COLUMN && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
+        if (index > -1 && indexY < SQUARES_PER_COLUMN && this.isMine(this.grid[indexY][index].type)) nearbyMines++
         // Bottom right
         index = pos.row + 1
         indexY = pos.col + 1
-        if (index < SQUARES_PER_ROW && indexY < SQUARES_PER_COLUMN && this.grid[indexY][index].type === SquareType.Mine) nearbyMines++
-        
+        if (index < SQUARES_PER_ROW && indexY < SQUARES_PER_COLUMN && this.isMine(this.grid[indexY][index].type)) nearbyMines++
+
         square.textContent = nearbyMines === 0 ? "" : nearbyMines.toString()
+        if (nearbyMines === 0) {
+            for (const fake of this.fakeMines) {
+
+            }
+        } else {
+            square.textContent = nearbyMines.toString()
+        }
+
         if (this.tilesLeft === 0) {
             document.getElementById("status")!.textContent = "You won! Congratulations."
             this.gameEnded = true
@@ -155,7 +190,6 @@ class Minesweeper {
         el.classList.remove("mnsw-flagged")
         this.flags++;
         flagCounter.textContent = `Flags left: ${this.flags}`
-        
     }
 
     toggleFlag(pos: Vec2): void {
