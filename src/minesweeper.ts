@@ -96,12 +96,10 @@ class Minesweeper {
         }
 
         for (const mine of taken) {
-            console.log('REAL ' + mine.col + ', ' + mine.row) //! FOR DEVELOPMENT PURPOSES ONLY, REMOVE IN PROD!
             this.grid[mine.col][mine.row].type = SquareType.Mine
         }
 
         for (const fake of this.fakeMines) {
-            console.log('FAKE' + fake.col + ', ' + fake.row) //! FOR DEVELOPMENT PURPOSES ONLY, REMOVE IN PROD!
             this.grid[fake.col][fake.row].type = SquareType.FakeMine
         }
     }
