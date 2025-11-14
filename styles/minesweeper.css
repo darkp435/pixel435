@@ -1,10 +1,31 @@
+body {
+    font-family: "Stack Sans Text", sans-serif;
+}
+
 .mnsw-btn {
-    width: 50px;
-    height: 50px;
-    margin: 5px;
+    width: 45px;
+    height: 45px;
+    margin: 3px;
     border-radius: 0px;
     border-color: black;
     transition: background-color 0.1s ease;
+    font-size: 1.25em;
+}
+
+.mnsw-btn-blank {
+    font-size: 0.8em !important;
+}
+
+.mnsw-btn-both-negative {
+    font-size: 0.7em !important;
+}
+
+h1 {
+    margin-bottom: 0px;
+}
+
+button {
+    font-family: 'Ubuntu', Times, serif;
 }
 
 .mnsw-revealed {
@@ -13,6 +34,16 @@
 
 .mnsw-flagged {
     background-color: rgb(255, 242, 0);
+    background-image: url('../../assets/flag.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 45px;
+    height: 45px;
+}
+
+.mnsw-lost {
+    background-color: rgb(255, 0, 0);
 }
 
 .mnsw-btn:hover {
@@ -35,7 +66,7 @@ button:disabled:active {
 
 #main {
     display: grid;
-    grid-template-columns: repeat(10, 50px);
-    grid-template-rows: repeat(10, 50px);
+    grid-template-columns: repeat(12, 45px);
+    grid-template-rows: repeat(12, 45px);
     gap: 5px;
 }

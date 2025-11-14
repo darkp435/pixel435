@@ -1,17 +1,17 @@
 // Implementation of a modified version of the game "Minesweeper"
 // Creator: darkp435 (GitHub)
+// Quote of this file:
+// "The game was hard to write, so the game should be hard for the user" - darkp435, 2025
 
 const container = document.getElementById("main") as HTMLElement
 const flagCounter = document.getElementById("counter") as HTMLParagraphElement
-const SQUARES_PER_ROW = 10
-const SQUARES_PER_COLUMN = 10
+const SQUARES_PER_ROW = 12
+const SQUARES_PER_COLUMN = 12
 const MINES = 10
 const FAKE_MINES = 5
-const MAGIC_SQUARES = 3
 
 enum SquareType {
     Blank,
-    Rearrange,
     Mine,
     FakeMine
 }
@@ -57,6 +57,7 @@ class Minesweeper {
     private tilesLeft: number;
     private gameEnded: boolean;
     private fakeMines: Array<Vec2>
+    private mines: Array<Vec2>
 
     constructor(firstclick: Vec2) {
         const taken: Array<Vec2> = []
@@ -73,6 +74,7 @@ class Minesweeper {
             taken.push(index)
         }
 
+        this.mines = taken
         this.fakeMines = []
         for (let i = 0; i < FAKE_MINES; i++) {
             let index: Vec2
@@ -114,6 +116,9 @@ class Minesweeper {
         if (this.gameEnded || el.isFlagged) return
         if (el.type === SquareType.Mine) {
             document.getElementById("status")!.textContent = "You lost! You clicked on a mine."
+            for (const mine of this.mines) {
+                document.getElementById(vec2ToElmentId(mine))!.classList.add("mnsw-lost")
+            }
             this.gameEnded = true
             return
         }
@@ -156,9 +161,27 @@ class Minesweeper {
 
         square.textContent = nearbyMines === 0 ? "" : nearbyMines.toString()
         if (nearbyMines === 0) {
+            let closestDistance = Infinity
+            let chosenFakeMine = this.fakeMines[0]
             for (const fake of this.fakeMines) {
-
+                // Manhattan distance since it's a grid
+                const distance = Math.abs(pos.row - fake.row) + Math.abs(pos.col - fake.col)
+                if (distance < closestDistance) {
+                    closestDistance = distance
+                    chosenFakeMine = fake
+                }
             }
+
+            //! For now, chosenFakeMine will be revealed, WILL CHANGE IN THE FUTURE to reveal adjacent one instead.
+            const colDistance = -(chosenFakeMine.col - pos.col)
+            const rowDistance = chosenFakeMine.row - pos.row
+            if (colDistance < 0 && rowDistance < 0) {
+                square.classList.add("mnsw-btn-both-negative")
+            } else {
+                square.classList.add("mnsw-btn-blank")
+            }
+
+            square.textContent = '(' + colDistance.toString() + ', ' + rowDistance.toString() + ')'
         } else {
             square.textContent = nearbyMines.toString()
         }
@@ -178,7 +201,7 @@ class Minesweeper {
         this.flags--;
         this.grid[pos.col][pos.row].isFlagged = true;
         const el = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
-        el.textContent = "F";
+        // el.textContent = "F";
         el.classList.add("mnsw-flagged")
         flagCounter.textContent = `Flags left: ${this.flags}`
     }
