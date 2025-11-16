@@ -9,11 +9,13 @@ const SQUARES_PER_ROW = 12
 const SQUARES_PER_COLUMN = 12
 const MINES = 10
 const FAKE_MINES = 5
+const MAGIC_SQUARES = 3
 
 enum SquareType {
     Blank,
     Mine,
-    FakeMine
+    FakeMine,
+    Magic
 }
 
 function randint(low: number, high: number) {
@@ -85,6 +87,17 @@ class Minesweeper {
             this.fakeMines.push(index)
         }
 
+        const magicSquares: Array<Vec2> = []
+        for (let i = 0; i < MAGIC_SQUARES; i++) {
+            let index: Vec2
+            do {
+                index = new Vec2(randint(0, SQUARES_PER_COLUMN - 1), randint(0, SQUARES_PER_ROW - 1))
+            } while (areSameCoords([...taken, ...this.fakeMines, ...magicSquares], index))
+
+            // console.log('MAGIC: ' + index.col + ', ' + index.row)
+            magicSquares.push(index)
+        }
+
         this.tilesLeft = SQUARES_PER_COLUMN * SQUARES_PER_ROW - MINES
 
         this.grid = []
@@ -102,6 +115,10 @@ class Minesweeper {
         for (const fake of this.fakeMines) {
             this.grid[fake.col][fake.row].type = SquareType.FakeMine
         }
+
+        for (const magic of magicSquares) {
+            this.grid[magic.col][magic.row].type = SquareType.Magic
+        }
     }
 
     // Helper function for determining nearby mines
@@ -111,6 +128,8 @@ class Minesweeper {
 
     newBtnClicked(pos: Vec2) {
         const el = this.grid[pos.col][pos.row]
+        const square = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
+
         if (this.gameEnded || el.isFlagged) return
         if (el.type === SquareType.Mine) {
             document.getElementById("status")!.textContent = "You lost! You clicked on a mine."
@@ -120,10 +139,13 @@ class Minesweeper {
             this.gameEnded = true
             return
         }
+        if (el.type === SquareType.Magic) {
+            this.shuffleMines()
+            square.classList.add("mnsw-magic")
+        }
 
-        const square = document.getElementById(vec2ToElmentId(pos)) as HTMLButtonElement
         el.revealed = true
-        square.className = "mnsw-btn mnsw-revealed"
+        square.classList.add("mnsw-revealed")
         this.tilesLeft--
         square.disabled = true
 
@@ -170,16 +192,20 @@ class Minesweeper {
                 }
             }
 
-            //! For now, chosenFakeMine will be revealed, WILL CHANGE IN THE FUTURE to reveal adjacent one instead.
-            const colDistance = -(chosenFakeMine.col - pos.col)
-            const rowDistance = chosenFakeMine.row - pos.row
+            //* For now, chosenFakeMine will be revealed, WILL CHANGE IN THE FUTURE to reveal adjacent one instead.
+            const colDistance = -(chosenFakeMine.col - pos.col) + randint(0, 2) - 1
+            const rowDistance = chosenFakeMine.row - pos.row + randint(0, 2) - 1
             if (colDistance < 0 && rowDistance < 0) {
                 square.classList.add("mnsw-btn-both-negative")
             } else {
                 square.classList.add("mnsw-btn-blank")
             }
 
-            square.textContent = '(' + colDistance.toString() + ', ' + rowDistance.toString() + ')'
+            if (rowDistance < 0) {
+                square.textContent = colDistance.toString() + rowDistance.toString() + 'i'
+            } else {
+                square.textContent = colDistance.toString() + '+' + rowDistance.toString() + 'i'
+            }
         } else {
             square.textContent = nearbyMines.toString()
         }
@@ -187,6 +213,26 @@ class Minesweeper {
         if (this.tilesLeft === 0) {
             document.getElementById("status")!.textContent = "You won! Congratulations."
             this.gameEnded = true
+        }
+    }
+
+    shuffleMines() {
+        // Create an array of potential shuffles to speed up randomisations
+        const unrevealed: Array<Vec2> = []
+        for (const [colNum, col] of this.grid.entries()) {
+            for (const [rowNum, row] of col.entries()) {
+                if (!row.revealed && row.type !== SquareType.Magic && row.type !== SquareType.Mine) unrevealed.push(new Vec2(colNum, rowNum))
+            }
+        }
+
+        for (const mine of this.mines) {
+            if (unrevealed.length === 0) break
+            const newIndex = randint(0, unrevealed.length - 1)
+            const newPos = unrevealed[newIndex]
+            this.grid[mine.col][mine.row].type = SquareType.Blank
+            this.grid[newPos.col][newPos.row].type = SquareType.Mine
+            // Destroy the evidence, the mines never shifted.
+            unrevealed.splice(newIndex, 1)
         }
     }
 

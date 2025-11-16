@@ -20,6 +20,11 @@ body {
     font-size: 0.7em !important;
 }
 
+.mnsw-magic {
+    background-color: #28d800 !important;
+    color: #565656 !important;
+}
+
 h1 {
     margin-bottom: 0px;
 }
@@ -40,6 +45,10 @@ button {
     background-position: center;
     width: 45px;
     height: 45px;
+}
+
+h4 {
+    margin-top: 0px;
 }
 
 .mnsw-lost {
