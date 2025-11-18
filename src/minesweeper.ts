@@ -137,6 +137,7 @@ class Minesweeper {
                 document.getElementById(vec2ToElmentId(mine))!.classList.add("mnsw-lost")
             }
             this.gameEnded = true
+            document.getElementById("restart")!.style.display = 'block'
             return
         }
         if (el.type === SquareType.Magic) {
@@ -308,5 +309,18 @@ for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
             onBtnClick(target.id, true)
         })
         container.appendChild(square);
+    }
+}
+
+document.getElementById("restart")!.onclick = () => {
+    window.location.reload()
+}
+
+document.getElementById("tutorial")!.onclick = () => {
+    const container = document.getElementById("tut-container") as HTMLDivElement
+    if (container.style.display === "flex") {
+        container.style.display = "none"
+    } else {
+        container.style.display = "flex"
     }
 }

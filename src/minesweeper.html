@@ -13,10 +13,28 @@
 
 <body>
     <h1>Twisted Minesweeper</h1>
-    <h4>Version 0.1 (unstable, expect bugs)</h4>
+    <h4>Version 0.1.1 (unstable, expect bugs)</h4>
     <p id="counter">Click the grid to start the game.</p>
-    <div id="main"></div>
     <p id="status"></p>
+    <button id="restart" style="display: none;">Restart game</button>
+    <button id="tutorial" style="margin: 10px;">How do I play?</button>
+    <div id="tut-container" style="display: none;">
+        <h4>HOW TO PLAY</h4>
+        <p>Twisted Minesweeper is based on standard minesweeper, but with a couple of additions and modifications.</p>
+        <p><strong>The Grid</strong></p>
+        <p>There is a grid (as you saw), and your goal is to reveal all the squares on the board <strong>EXCEPT</strong> the mines. The amount of mines is the same amount as the flags you have, and the amount of fake mines is half of the amount of mines. There are 3 "magic tiles".</p>
+        <p><strong>Revealing Squares</strong></p>
+        <p>If you reveal a square that is a mine, you lose. When you reveal a square that isn't a mine, it'll show the amount of mines adjacent to it (including diagonal), i.e. the square will display the amount of mines are next to it (max 8, since there can only be 8 squares next to it, diagonals count). Note that it also counts the <strong>FAKE</strong> mines, so be careful! If there are no mines next to it, it'll display a complex number (e.g. 3+5i, -2+3i, 6-2i, etc.) which represents the relative position of either a random square that is next to a fake mine or the fake mine itself. The real part of the number represents horizontal translation and the imaginary part (the number that is suffixed with 'i') represents vertical translation. For example, if a square reveals "3i+5" then it means that the square 3 right and 5 up of that square is either where the fake mine is, or where the fake mine is next to. Fake mines do not make you lose when you reveal it.</p>
+        <p><strong>Magic Tiles</strong></p>
+        <p>There are also "magic tiles" that shift the mines around when you click on it.</p>
+        <p><strong>Flags</strong></p>
+        <p>You can flag a tile if you think that a mine is there so that you can keep track of how many mines are left and where they are. However, flagging is optional.</p>
+        <p><strong>Controls</strong></p>
+        <p><strong>Left click</strong> on a square on the board to reveal it.</p>
+        <p><strong>Right click</strong> on a square on the board to flag it.</p>
+        <p>Have fun!</p>
+    </div>
+    <div id="main"></div>
 </body>
 
 </html>

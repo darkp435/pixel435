@@ -49,6 +49,7 @@ button {
 
 h4 {
     margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .mnsw-lost {
@@ -78,4 +79,19 @@ button:disabled:active {
     grid-template-columns: repeat(12, 45px);
     grid-template-rows: repeat(12, 45px);
     gap: 5px;
+}
+
+#tut-container {
+    flex-direction: column;
+    max-width: 600px;
+    gap: 10px;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+h6 {
+    margin: 0px;
+}
+
+p {
+    margin: 0px;
 }
