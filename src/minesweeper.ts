@@ -73,6 +73,7 @@ class Minesweeper {
                 index = new Vec2(randint(0, SQUARES_PER_COLUMN - 1), randint(0, SQUARES_PER_ROW - 1))
             } while (areSameCoords(taken, index) || index.compare(firstclick))
 
+            // console.log('REAL: ' + index.col + ', ' + index.row)
             taken.push(index)
         }
 
@@ -84,6 +85,7 @@ class Minesweeper {
                 index = new Vec2(randint(0, SQUARES_PER_COLUMN - 1), randint(0, SQUARES_PER_ROW - 1))
             } while (areSameCoords([...taken, ...this.fakeMines], index))
 
+            // console.log('FAKE: ' + index.col + ', ' + index.row)
             this.fakeMines.push(index)
         }
 
@@ -232,7 +234,10 @@ class Minesweeper {
             const newPos = unrevealed[newIndex]
             this.grid[mine.col][mine.row].type = SquareType.Blank
             this.grid[newPos.col][newPos.row].type = SquareType.Mine
+            // console.log(`SHIFT MINE FROM ${mine.col}, ${mine.row} TO ${newPos.col}, ${newPos.row}`)
             // Destroy the evidence, the mines never shifted.
+            mine.col = newPos.col
+            mine.row = newPos.row
             unrevealed.splice(newIndex, 1)
         }
     }
