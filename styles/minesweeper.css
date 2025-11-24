@@ -48,7 +48,7 @@ button {
 }
 
 .mnsw-flagged:hover {
-    background-color: rgb(255, 242, 0);
+    background-color: rgb(255, 242, 0) !important;
 }
 
 h4 {
@@ -58,6 +58,10 @@ h4 {
 
 .mnsw-lost {
     background-color: rgb(255, 0, 0);
+}
+
+.mnsw-lost:hover {
+    background-color: rgb(255, 0, 0) !important;
 }
 
 .mnsw-btn:hover {
@@ -98,4 +102,10 @@ h6 {
 
 p {
     margin: 0px;
+}
+
+#tutorial {
+    margin: 10px;
+    width: 125px;
+    height: 25px;
 }
