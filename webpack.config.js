@@ -29,6 +29,11 @@ const htmlPages = [
 ];
 
 module.exports = {
+  performance: {
+    hints: "warning",
+    maxAssetSize: 500000000000,
+    maxEntrypointSize: 5000000000,
+  },
   entry: entries,
   output: {
     filename: '[name].js', // asi.js, calc.js, etc.
@@ -78,6 +83,10 @@ module.exports = {
         { from: 'styles/civilization.css', to: 'styles/civilization.css' },
         { from: 'styles/fence.css', to: 'styles/fence.css' },
         { from: 'styles/minesweeper.css', to: 'styles/minesweeper.css' },
+        {
+          from: path.resolve(__dirname, 'assets'),
+          to: path.resolve(__dirname, 'dist/assets')
+        }
       ],
     }),
   ],

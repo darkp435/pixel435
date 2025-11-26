@@ -39,7 +39,7 @@ button {
 
 .mnsw-flagged {
     background-color: rgb(255, 242, 0);
-    background-image: url('../../assets/flag.svg');
+    background-image: url('../assets/flag.svg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
