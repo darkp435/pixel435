@@ -84,8 +84,8 @@ button:disabled:active {
 
 #main {
     display: grid;
-    grid-template-columns: repeat(12, 45px);
-    grid-template-rows: repeat(12, 45px);
+    grid-template-columns: repeat(15, 45px);
+    grid-template-rows: repeat(15, 45px);
     gap: 5px;
 }
 

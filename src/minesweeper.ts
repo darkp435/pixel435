@@ -4,12 +4,13 @@
 // "The game was hard to write, so the game should be hard for the user" - darkp435, 2025
 
 const container = document.getElementById("main") as HTMLElement;
+import { Queue } from "./queue";
 const flagCounter = document.getElementById("counter") as HTMLParagraphElement;
-const SQUARES_PER_ROW = 12;
-const SQUARES_PER_COLUMN = 12;
-const MINES = 10;
+const SQUARES_PER_ROW = 15;
+const SQUARES_PER_COLUMN = 15;
+const MINES = 15;
 const FAKE_MINES = MINES / 2;
-const MAGIC_SQUARES = 3;
+const MAGIC_SQUARES = 5;
 /** This is in milliseconds! */
 const REVEAL_DURATION = 30000;
 
@@ -341,15 +342,6 @@ for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
         const square = document.createElement('button');
         square.id = i.toString() + '-' + j.toString();
         square.className = 'mnsw-btn';
-        square.addEventListener('click', (ev) => {
-            const target = ev.target as HTMLElement;
-            onBtnClick(target.id);
-        });
-        square.addEventListener('contextmenu', (ev) => {
-            ev.preventDefault();
-            const target = ev.target as HTMLElement;
-            onBtnClick(target.id, true);
-        });
         container.appendChild(square);
     }
 }
@@ -357,6 +349,19 @@ for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
 document.getElementById("restart")!.onclick = () => {
     window.location.reload();
 };
+
+container.addEventListener("click", (ev) => {
+    const target = ev.target as HTMLElement;
+    if (!target.matches(".mnsw-btn")) return;
+    onBtnClick(target.id);
+});
+
+container.addEventListener("contextmenu", (ev) => {
+    const target = ev.target as HTMLElement;
+    if (!target.matches(".mnsw-btn")) return;
+    ev.preventDefault();
+    onBtnClick(target.id, true);
+});
 
 document.getElementById("tutorial")!.onclick = () => {
     const container = document.getElementById("tut-container") as HTMLDivElement;
