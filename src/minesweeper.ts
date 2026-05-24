@@ -4,7 +4,6 @@
 // "The game was hard to write, so the game should be hard for the user" - darkp435, 2025
 
 const container = document.getElementById("main") as HTMLElement;
-import { Queue } from "./queue";
 const flagCounter = document.getElementById("counter") as HTMLParagraphElement;
 const SQUARES_PER_ROW = 15;
 const SQUARES_PER_COLUMN = 15;
@@ -12,7 +11,7 @@ const MINES = 15;
 const FAKE_MINES = MINES / 2;
 const MAGIC_SQUARES = 5;
 /** This is in milliseconds! */
-const REVEAL_DURATION = 30000;
+const REVEAL_DURATION = 1000;
 
 enum SquareType {
     Blank,
@@ -335,6 +334,14 @@ const onBtnClick: OnBtnClick = (id: string, rightClick?: boolean) => {
     }
 };
 
+function generateLinearEquation(ans: Number) {
+
+}
+
+function solveLinearEquation() {
+
+}
+
 onBtnClick.game = undefined;
 
 for (let i = 0; i < SQUARES_PER_COLUMN; i++) {
@@ -376,4 +383,8 @@ setInterval(() => {
     const game = onBtnClick.game;
     // Not initialised yet
     if (game === undefined) return;
+    // 1% chance for captcha
+    if (randint(1, 100) == 50) {
+        solveLinearEquation();
+    }
 }, REVEAL_DURATION);
