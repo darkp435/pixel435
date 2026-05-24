@@ -188,6 +188,7 @@ class Minesweeper {
                 document.getElementById("status")!.textContent = "You lost! You clicked on a mine.";
                 for (const mine of this.mines) {
                     document.getElementById(vec2ToElmentId(mine))!.classList.add("mnsw-lost");
+                    document.getElementById(vec2ToElmentId(mine))!.textContent = "💣"
                 }
                 this.gameEnded = true;
                 document.getElementById("restart")!.style.display = 'block';

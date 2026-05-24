@@ -1,11 +1,12 @@
 body {
     font-family: "Stack Sans Text", sans-serif;
+    background: rgb(255, 197, 131);
 }
 
 .mnsw-btn {
     width: 45px;
     height: 45px;
-    margin: 3px;
+    margin: 0px;
     border-radius: 0px;
     border-color: black;
     transition: background-color 0.1s ease;
