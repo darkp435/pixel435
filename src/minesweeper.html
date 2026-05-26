@@ -10,123 +10,20 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Stack+Sans+Text:wght@200..700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
         rel="stylesheet">
-    <style>
-        body {
-    font-family: "Stack Sans Text", sans-serif;
-}
+        
+    <link rel="stylesheet" href="styles/minesweeper.css">
+    <script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$']] }
+};
+</script>
 
-.mnsw-btn {
-    width: 45px;
-    height: 45px;
-    margin: 3px;
-    border-radius: 0px;
-    border-color: black;
-    transition: background-color 0.1s ease;
-    font-size: 1.25em;
-}
-
-.mnsw-btn-blank {
-    font-size: 0.8em !important;
-}
-
-.mnsw-btn-both-negative {
-    font-size: 0.7em !important;
-}
-
-.mnsw-magic {
-    background-color: #28d800 !important;
-    color: #565656 !important;
-}
-
-h1 {
-    margin-bottom: 0px;
-}
-
-button {
-    font-family: 'Ubuntu', Times, serif;
-}
-
-.mnsw-revealed {
-    background-color: #22b900;
-}
-
-.mnsw-flagged {
-    background-color: rgb(255, 242, 0);
-    background-image: url('assets/flag.svg');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 45px;
-    height: 45px;
-}
-
-.mnsw-flagged:hover {
-    background-color: rgb(255, 242, 0) !important;
-}
-
-h4 {
-    margin-top: 0px;
-    margin-bottom: 0px;
-}
-
-.mnsw-lost {
-    background-color: rgb(255, 0, 0);
-}
-
-.mnsw-lost:hover {
-    background-color: rgb(255, 0, 0) !important;
-}
-
-.mnsw-btn:hover {
-    background-color: rgb(162, 255, 0);
-}
-
-button:disabled {
-    color: inherit;
-    background-color: #22b900;
-    opacity: 1;
-}
-
-button:disabled:hover,
-button:disabled:active {
-    border-color: black;
-    background-color: #22b900;
-    transform: none;
-    box-shadow: none;
-}
-
-#main {
-    display: grid;
-    grid-template-columns: repeat(15, 45px);
-    grid-template-rows: repeat(15, 45px);
-    gap: 5px;
-}
-
-#tut-container {
-    flex-direction: column;
-    max-width: 600px;
-    gap: 10px;
-    font-family: 'Times New Roman', Times, serif;
-}
-
-h6 {
-    margin: 0px;
-}
-
-p {
-    margin: 0px;
-}
-
-#tutorial {
-    margin: 10px;
-    width: 125px;
-    height: 25px;
-}
-    </style>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body>
     <h1>Twisted Minesweeper</h1>
+    <p>Einstein: $E = mc^2$</p>
     <h4>Version 0.2 (unstable, expect bugs)</h4>
     <p id="counter">Click the grid to start the game.</p>
     <p id="status"></p>

@@ -21,6 +21,9 @@ enum SquareType {
 }
 
 function randint(low: number, high: number) {
+    if (low > high) {
+        throw new Error("random: low is bigger than high!")
+    }
     return Math.floor(Math.random() * (high - low + 1)) + low;
 }
 
@@ -340,7 +343,7 @@ function generateLinearEquation(ans: Number) {
 }
 
 function solveLinearEquation() {
-
+    
 }
 
 onBtnClick.game = undefined;
@@ -389,3 +392,4 @@ setInterval(() => {
         solveLinearEquation();
     }
 }, REVEAL_DURATION);
+window.MathJax.typeset();

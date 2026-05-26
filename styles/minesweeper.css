@@ -8,6 +8,7 @@ body {
     height: 45px;
     margin: 0px;
     border-radius: 0px;
+    border-width: 2px;
     border-color: black;
     transition: background-color 0.1s ease;
     font-size: 1.25em;
@@ -87,7 +88,7 @@ button:disabled:active {
     display: grid;
     grid-template-columns: repeat(15, 45px);
     grid-template-rows: repeat(15, 45px);
-    gap: 5px;
+    gap: 0px;
 }
 
 #tut-container {
