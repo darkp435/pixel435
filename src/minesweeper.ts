@@ -338,12 +338,20 @@ const onBtnClick: OnBtnClick = (id: string, rightClick?: boolean) => {
     }
 };
 
-function generateLinearEquation(ans: Number) {
-
+function generateLinearEquation(ans: number, el: HTMLElement) {
+    const coefficient = randint(1, 10)
+    const constant = randint(1, 40)
+    const rhs = ans * coefficient + constant
+    const equation = `$${coefficient}x+${constant}=${rhs}$`
+    el.textContent = equation
 }
 
 function solveLinearEquation() {
-    
+    const ans = randint(-100, 100)
+    // console.log(ans)
+    const el = document.getElementById("test") as HTMLParagraphElement
+    generateLinearEquation(ans, el)
+    window.MathJax.typeset();
 }
 
 onBtnClick.game = undefined;
@@ -388,8 +396,9 @@ setInterval(() => {
     // Not initialised yet
     if (game === undefined) return;
     // 1% chance for captcha
-    if (randint(1, 100) == 50) {
-        solveLinearEquation();
-    }
+    // if (randint(1, 100) == 50) {
+    //     solveLinearEquation();
+    // }
 }, REVEAL_DURATION);
-window.MathJax.typeset();
+
+solveLinearEquation()
