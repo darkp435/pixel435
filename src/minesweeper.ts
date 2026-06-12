@@ -346,12 +346,29 @@ function generateLinearEquation(ans: number, el: HTMLElement) {
     el.textContent = equation
 }
 
-function solveLinearEquation() {
+function submit(): Promise<string> {
+    return new Promise(resolve => {
+        document.getElementById("captcha-submit")!.onclick = () => {
+            const solutionElement = document.getElementById("sol") as HTMLInputElement
+            resolve(solutionElement.value)
+        }
+    })
+}
+
+const overlay = document.querySelector(".overlay") as HTMLDivElement
+
+async function solveLinearEquation() {
+    overlay.style.display = "flex"
     const ans = randint(-100, 100)
     // console.log(ans)
     const el = document.getElementById("test") as HTMLParagraphElement
     generateLinearEquation(ans, el)
     window.MathJax.typeset();
+    let userAns = await submit()
+    while (Number(userAns) !== ans) {
+        userAns = await submit()
+    }
+    overlay.style.display = 'none'
 }
 
 onBtnClick.game = undefined;
@@ -391,14 +408,15 @@ document.getElementById("tutorial")!.onclick = () => {
     }
 };
 
+let alreadyHasCaptcha = false
+
 setInterval(() => {
     const game = onBtnClick.game;
     // Not initialised yet
     if (game === undefined) return;
     // 1% chance for captcha
-    // if (randint(1, 100) == 50) {
-    //     solveLinearEquation();
-    // }
+    if (randint(1, 30) == 1 && !alreadyHasCaptcha) {
+        alreadyHasCaptcha = true
+        solveLinearEquation().then(() => alreadyHasCaptcha = false)
+    }
 }, REVEAL_DURATION);
-
-solveLinearEquation()
