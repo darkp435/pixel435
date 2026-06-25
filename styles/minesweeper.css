@@ -132,6 +132,7 @@ p {
     width: 40vw;
     height: 3rem;
     background-color: #00fff2;
+    border-bottom: 1px solid black;
 
     display: flex;
     justify-content: center;

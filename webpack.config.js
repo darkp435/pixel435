@@ -12,7 +12,8 @@ const entries = {
   fence: './src/fence.ts',
   rng: './src/rng.ts',
   users: './src/users.ts',
-  minesweeper: './src/minesweeper.ts'
+  minesweeper: './src/minesweeper.ts',
+  'lobotomy-chess': './src/lobotomy-chess.ts'
 };
 
 const htmlPages = [
@@ -83,6 +84,7 @@ module.exports = {
         { from: 'styles/civilization.css', to: 'styles/civilization.css' },
         { from: 'styles/fence.css', to: 'styles/fence.css' },
         { from: 'styles/minesweeper.css', to: 'styles/minesweeper.css' },
+        { from: 'styles/lobotomy-chess.css', to: 'styles/lobotomy-chess.css' },
         {
           from: path.resolve(__dirname, 'assets'),
           to: path.resolve(__dirname, 'dist/assets')
