@@ -3,6 +3,8 @@
 // Quote of this file:
 // "no" - frankjin05
 
+const chessBoard = document.getElementById("chess-board") as HTMLDivElement
+
 enum ChessPiece {
     Pawn,
     Knight,
@@ -46,18 +48,27 @@ const _chessPieceMap = new Map<ChessPiece, string>()
 
 // This will eventually be mapped to image paths
 // instead of characters "when the time is ripe"
-function pieceToDisplay(piece: ChessPiece) {
+function pieceToDisplay(piece: ChessPiece | null) {
     if (!_chessPieceMap.size) {
         _chessPieceMap.set(ChessPiece.Pawn, "P")
         _chessPieceMap.set(ChessPiece.Bishop, "B")
         _chessPieceMap.set(ChessPiece.Rook, "R")
         _chessPieceMap.set(ChessPiece.Queen, "Q")
+        _chessPieceMap.set(ChessPiece.Knight, "N")
+        _chessPieceMap.set(ChessPiece.King, "K")
     }
+    if (piece == null) {
+        return ""
+    }
+    return _chessPieceMap.get(piece) || ""
 }
 
 // Created via JS to avoid a gigantic HTML file
 for (let i = 0; i < 8; i++) {
-    for (let j = 9; j < 8; j++) {
-        
+    for (let j = 0; j < 8; j++) {
+        let square = document.createElement("button")
+        square.id = `${i}-${j}`
+        square.textContent = pieceToDisplay(board.getPiece(i, j))
+        chessBoard.appendChild(square)
     }
 }

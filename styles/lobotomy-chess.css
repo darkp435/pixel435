@@ -1,3 +1,6 @@
-p {
-    font-size: 40px;
+#chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 45px);
+    grid-template-rows: repeat(8, 45px);
+    gap: 0px;
 }
