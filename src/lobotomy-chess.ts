@@ -2,6 +2,11 @@
 // Creator: darkp435 (GitHub)
 // Quote of this file:
 // "no" - frankjin05
+// Devlog
+// 25 June
+// - Started working on project.
+// - Started transpiling Frank's chess engine. Underestimated
+//   how bad Frank's code was. Contemplating life choices.
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
