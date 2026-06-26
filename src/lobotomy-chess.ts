@@ -5,6 +5,13 @@
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
+class GridCoord {
+    constructor(public row: number, public col: number) {}
+    isEqual(other: GridCoord) {
+        return other.row == this.row && other.col == this.col
+    }
+}
+
 enum ChessPiece {
     Pawn,
     Knight,
@@ -18,8 +25,10 @@ enum ChessPiece {
 class Board {
     // Null means NO piece is there!
     private grid: Array<Array<ChessPiece | null>>
+    private isTurn: boolean
 
     constructor() {
+        this.isTurn = true
         type CP = ChessPiece
         const CP = ChessPiece
 
@@ -39,6 +48,52 @@ class Board {
     getPiece(row: number, col: number) {
         return this.grid[row][col]
     }
+
+    getPieceFromCoord(coord: GridCoord) {
+        return this.grid[coord.row][coord.col]
+    }
+
+    setPiece(coord: GridCoord, piece: ChessPiece | null) {
+        this.grid[coord.row][coord.col]
+    }
+
+    private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
+        return true;
+    }
+
+    private isLegalMove(from: GridCoord, to: GridCoord): boolean {
+        if (!this.isTurn || from.isEqual(to) || this.getPieceFromCoord(from) === null) {
+            return false
+        }
+
+        const piece = this.getPieceFromCoord(from)
+        switch (piece) {
+            case ChessPiece.Pawn:
+                if (!this._checkPawnLegality(from, to)) return false;
+                break
+            case ChessPiece.Knight:
+                break
+            case ChessPiece.Bishop:
+                break
+            case ChessPiece.Rook:
+                break
+            case ChessPiece.Queen:
+                break
+            case ChessPiece.King:
+                break
+            default:
+                // Shouldn't run.
+                console.error("isLegalMove: unknown piece!")
+        }
+
+        return true
+    }
+
+    move(from: GridCoord, to: GridCoord) {
+        if (!this.isLegalMove(from, to)) {
+            return
+        }
+    }
 }
 
 const board = new Board()
@@ -57,7 +112,7 @@ function pieceToDisplay(piece: ChessPiece | null) {
         _chessPieceMap.set(ChessPiece.Knight, "N")
         _chessPieceMap.set(ChessPiece.King, "K")
     }
-    if (piece == null) {
+    if (piece === null) {
         return ""
     }
     return _chessPieceMap.get(piece) || ""
