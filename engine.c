@@ -201,7 +201,7 @@ const char eg_pawn_table[64] = {
     5,  15, 20,  5,  5, 20, 15,  5,
     5,  0,  0, 30, 30,-10,  0,  5,
     0,  0,  0,  0,  0,  0,  0,  0
-}; // this table represents the difference from mg
+};
 
 const char knight_table[64] = {
     -50,-40,-30,-30,-30,-30,-40,-50,
@@ -329,41 +329,6 @@ const char queen_rays[8][7] = {
     {-17, -34, -51, -68, -85, -102, -119},
     {-1, -2, -3, -4, -5, -6, -7}
 };
-
-void debug_assert(int x, int y, int d) {
-    if (!(x == y)) {
-        print_test_message("ASRT-FA", x);
-        print_test_message("ASRT-FB", y);
-        print_test_message("ASRT-FD", d);
-    }
-}
-
-void debug_assert_uint32(unsigned long x, unsigned long y, int d) {
-    if (!(x == y)) {
-        print_uint32("ASRT-FA", x);
-        print_uint32("ASRT-FB", y);
-        print_uint32("ASRT-FD", d);
-    }
-}
-
-void init_eval(Piece board[], ExtraGameInfo* game_data) {
-    int i, piece;
-    short piece_allegiance;
-    game_data->mg_eval = 0;
-    game_data->eg_modifier = 0;
-    for (i = 0; i < 128; i++) {
-        if (i & 0x88) {
-            i += 7;
-            continue;
-        }
-        if (!board[i]) continue;
-        piece = abs(board[i]);
-        piece_allegiance = SIGN(board[i]);
-        game_data->mg_eval += piece_allegiance * piece_values[piece];
-        game_data->mg_eval += piece_allegiance * mg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
-        game_data->eg_modifier += piece_allegiance * eg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
-    }
-}
 
 void compute_pawn_score(Piece board[], char side, unsigned long* my_pawn_structure, unsigned long* opp_pawn_structure, short* pawn_score) {
     *pawn_score = 0;

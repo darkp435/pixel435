@@ -2,11 +2,16 @@
 // Creator: darkp435 (GitHub)
 // Quote of this file:
 // "no" - frankjin05
+//
 // Devlog
 // 25 June
 // - Started working on project.
 // - Started transpiling Frank's chess engine. Underestimated
 //   how bad Frank's code was. Contemplating life choices.
+// 26 June
+// - Started working on actual chess logic until I realised
+//   that it's gonna be an adventure writing it.
+// - Continued transpilation of engine.c into engine.ts
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
@@ -70,11 +75,10 @@ class Board {
     }
 
     setPiece(coord: GridCoord, piece: ChessPiece | null) {
-        this.grid[coord.row][coord.col]
+        this.grid[coord.row][coord.col] = piece
     }
 
     private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
-        // Special move: en passant
         return true;
     }
 

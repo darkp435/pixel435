@@ -1,9 +1,15 @@
 // TypeScript implementation of Frank's chess engine.
 // It is a direct transpilation of engine.c found
-// in the rootdir of this project.
+// in the rootdir of this project (or previously
+// found, if it has been deleted).
 // Quote of this file:
 // "Don't ask me, ask past me." - Frank, the madman
 // who created the chess engine
+//
+// It would be foolish to attempt to modify this after
+// this has been finished except to patch bugs, and even
+// that is risky. This file is where readability goes to
+// die.
 
 const ENGINE_NAME = "FLEDGLING 1.0"
 const EMPTY  = 0
@@ -74,6 +80,7 @@ const sq_tbl_c = [
     0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0
 ];
 
+// NOTE: these were originally macro functions in the original file.
 function SIGN(X: number) {
     return Number(X > 0) - Number(X < 0)
 }
@@ -98,7 +105,9 @@ function DECODE_FROM(X: number) {
     return ((X & 56) << 1) | (X & 7)
 }
 
-class ExtraGameInfo {
+// It's unfortunate, but ExtraGameInfo and Undo must be exported as they are
+// params for engine()
+export class ExtraGameInfo {
     constructor(
         public castling: number,
         public ep_square: number,
@@ -120,7 +129,7 @@ class ExtraGameInfo {
     ) {}
 }
 
-class Undo {
+export class Undo {
     constructor(
         public move: number,
         public captured: number,
@@ -142,4 +151,183 @@ class Undo {
         public eg_modifier: number,
         public hash: number
     ) {}
+}
+
+class Metrics {
+    constructor(
+        public total_nodes: number,
+        public horizon_nodes: number,
+        public q_nodes: number,
+        public beta_cutoffs: number,
+        public extensions: number,
+        public tt_hits: number,
+        public final_eval: number
+    ) {}
+}
+
+class TTEntry {
+    constructor(
+        public key: number,
+        public score: number,
+        public best_move: number,
+        public depth: number,
+        public flag: number
+    ) {}
+}
+
+const mg_pawn_table = [
+     0,  0,  0,  0,  0,  0,  0,  0,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    5,  5, 10, 25, 25, 10,  5,  5,
+    0,  0,  0, 20, 20,  0,  0,  0,
+    5, -5,-10,  5,  5,-10, -5,  5,
+    5, 10, 10,-20,-20, 20, 10,  5,
+    0,  0,  0,  0,  0,  0,  0,  0
+];
+
+const eg_pawn_table = [
+    0,  0,  0,  0,  0,  0,  0,  0,
+    30, 30, 30, 30, 30, 30, 30, 30,
+    40, 40, 30, 20, 20, 30, 40, 40,
+    25, 25, 20,  5,  5, 20, 25, 25,
+    20, 20, 20,  0,  0, 20, 20, 20,
+    5,  15, 20,  5,  5, 20, 15,  5,
+    5,  0,  0, 30, 30,-10,  0,  5,
+    0,  0,  0,  0,  0,  0,  0,  0
+];
+
+const knight_table = [
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-20,-30,-30,-30,-30,-20,-50,
+];
+
+const bishop_table = [
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10, 10, 10,  0,  0, 10, 10,-10,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20,
+];
+
+const rook_table = [
+     0,  0,  0,  0,  0,  0,  0,  0,
+     5, 10, 10, 10, 10, 10, 10,  5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5, -5, -5,  0,  0, -5, -5, -5
+];
+
+const queen_table = [
+    -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+    -5,  0,  5,  5,  5,  5,  0, -5,
+     0,  0,  5,  5,  5,  5,  0, -5,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20
+];
+
+const mg_king_table = [
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+    20, 20,  0,  0,  0,  0, 20, 20,
+    20, 30, 20,  0,  5, 10, 30, 20
+];
+
+const eg_king_table = [
+     10, 30, 30, 40, 40, 30, 30, 10,
+     25, 40, 45, 55, 55, 45, 40, 25,
+     20, 35, 60, 80, 80, 60, 35, 20,
+     15, 30, 75, 95, 95, 75, 30, 15,
+      0, 15, 60, 80, 80, 60, 15,  0,
+    -15,  0, 40, 45, 45, 40,  0,-15,
+    -50,-45,  0,  0,  0,  0,-45,-50,
+    -70,-60,-50,-30,-30,-40,-60,-70
+];
+
+const null_pst = [
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0
+];
+
+const mg_table_atlas = [null_pst, mg_pawn_table, knight_table, bishop_table, rook_table, queen_table, mg_king_table]
+const eg_table_atlas = [null_pst, eg_pawn_table, null_pst, null_pst, null_pst, null_pst, eg_king_table]
+const piece_values = [0, 100, 320, 330, 500, 900, 0]
+const PROMOTION_VALUES = [2, 3, 5, 9]
+const phase_weight = [0, 0, 11, 11, 21, 42, 0]
+const doubled_penalty = [0, 0, 20, 20, 20, 20, 20, 20]
+const MVV_LVA = [
+    [0, 0, 0, 0, 0, 0, 0],
+    [0, 9, 8, 7, 5, 1, 0],
+    [0,31,30,29,27,23,20],
+    [0,32,31,30,28,24,21],
+    [0,49,48,47,45,41,40],
+    [0,89,88,87,85,81,80],
+    [0,0,0,0,0,0,0] // Consistency also died here apparently.
+]
+
+const knight_moves = [31, 33, 14, 18, -31, -33, -14, -18];
+const queen_moves = [15, 16, 17, 1, -15, -16, -17, -1];
+const queen_rays = [
+    [15, 30, 45, 60, 75, 90, 105],
+    [16, 32, 48, 64, 80, 96, 112],
+    [17, 34, 51, 68, 85, 102, 119],
+    [1, 2, 3, 4, 5, 6, 7],
+    [-15, -30, -45, -60, -75, -90, -105],
+    [-16, -32, -48, -64, -80, -96, -112],
+    [-17, -34, -51, -68, -85, -102, -119],
+    [-1, -2, -3, -4, -5, -6, -7]
+]
+
+function minimax(): number {
+    
+}
+
+export function engine(
+    board: Array<number>, 
+    game_data: ExtraGameInfo, 
+    max_depth: number, 
+    last_move: Undo, 
+    history: Array<Array<number>>,
+    metrics: Metrics
+    ) {
+    let iter_depth;
+    let i;
+    let engine_eval;
+    let last_pv = [0]
+    let pv = [0]
+    let history_table = [0]
+    // # 1792 TTEntry* tt = (TTEntry*)calloc(TT_SIZE, sizeof(TTEntry));
+    let killers = [0]
+    metrics.beta_cutoffs = 0
+    metrics.extensions = 0
+    metrics.final_eval = 0
+    metrics.horizon_nodes = 0
+    metrics.q_nodes = 0
+    metrics.total_nodes = 0
+    metrics.tt_hits = 0
 }
