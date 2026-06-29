@@ -26,14 +26,25 @@ enum ChessPiece {
     King
 }
 
+enum Castle {
+    Long,
+    Short,
+    None,
+    Both
+}
+
 // Chess grid is 8x8 (obviously)
 class Board {
     // Null means NO piece is there!
     private grid: Array<Array<ChessPiece | null>>
     private isTurn: boolean
+    private castle: Castle
+    private enPassant: GridCoord | null
 
     constructor() {
         this.isTurn = true
+        this.enPassant = null
+        this.castle = Castle.Both
         type CP = ChessPiece
         const CP = ChessPiece
 
@@ -63,32 +74,79 @@ class Board {
     }
 
     private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
+        // Special move: en passant
         return true;
     }
 
+    private _checkBishopLegality(from: GridCoord, to: GridCoord): boolean {
+        return true;
+    }
+
+    private _checkRookLegality(from: GridCoord, to: GridCoord): boolean {
+        return true;
+    }
+
+    private _checkQueenLegality(from: GridCoord, to: GridCoord): boolean {
+        return true;
+    }
+
+    private _checkKingLeglity(from: GridCoord, to: GridCoord): boolean {
+        // Special move: castling
+        // Conditions:
+        // 1. The king cannot castle through check
+        // 2. The king cannot castle out of check
+        // 3. Both the king and the rook can'tve moved previously
+        // 4. All squares in the path must be empty
+        return true;
+    }
+
+    // For player only
+    private leavesKingInCheck(from: GridCoord, to: GridCoord): boolean {
+        return false;
+    }
+
     private isLegalMove(from: GridCoord, to: GridCoord): boolean {
-        if (!this.isTurn || from.isEqual(to) || this.getPieceFromCoord(from) === null) {
+        if (!this.isTurn || 
+            from.isEqual(to) || 
+            this.getPieceFromCoord(from) === null ||
+            // Moving outside of the board
+            to.col > 7 ||
+            to.col < 0 ||
+            to.row > 7 ||
+            to.col < 0
+        ) {
             return false
         }
 
         const piece = this.getPieceFromCoord(from)
+        // This could probably be done via polymorphism
+        // but that's for future me
         switch (piece) {
             case ChessPiece.Pawn:
-                if (!this._checkPawnLegality(from, to)) return false;
+                if (!this._checkPawnLegality(from, to)) return false
                 break
             case ChessPiece.Knight:
+                // Knight can jump over pieces
+                // so it's pretty much always legal
+                // unless leaving king in check (which
+                // is checked later)
                 break
             case ChessPiece.Bishop:
+                if (!this._checkBishopLegality(from, to)) return false
                 break
             case ChessPiece.Rook:
+                if (!this._checkRookLegality(from, to)) return false
                 break
             case ChessPiece.Queen:
+                if (!this._checkQueenLegality(from, to)) return false
                 break
             case ChessPiece.King:
+                if (!this._checkKingLeglity(from, to)) return false
                 break
             default:
                 // Shouldn't run.
                 console.error("isLegalMove: unknown piece!")
+                return false
         }
 
         return true
