@@ -4,14 +4,18 @@
 // "no" - frankjin05
 //
 // Devlog
-// 25 June
+// 25/06
 // - Started working on project.
 // - Started transpiling Frank's chess engine. Underestimated
 //   how bad Frank's code was. Contemplating life choices.
-// 26 June
+// 26/06
 // - Started working on actual chess logic until I realised
 //   that it's gonna be an adventure writing it.
 // - Continued transpilation of engine.c into engine.ts
+// 29/06
+// - Continued working on chess logic, specifically moves.
+// - Realised handling castling and en passant was going
+//   to be a big pain.
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
@@ -79,6 +83,13 @@ class Board {
     }
 
     private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
+        // Pawns can't move backwards nor sideways
+        if (to.row <= from.row ||
+            to.row - from.row > 2 ||
+            Math.abs(to.col - from.col) > 1
+        ) {
+            return false
+        }
         return true;
     }
 
@@ -91,7 +102,7 @@ class Board {
     }
 
     private _checkQueenLegality(from: GridCoord, to: GridCoord): boolean {
-        return true;
+        return this._checkBishopLegality(from, to) || this._checkRookLegality(from, to)
     }
 
     private _checkKingLeglity(from: GridCoord, to: GridCoord): boolean {

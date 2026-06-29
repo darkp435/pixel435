@@ -303,8 +303,45 @@ const queen_rays = [
     [-1, -2, -3, -4, -5, -6, -7]
 ]
 
-function minimax(): number {
-    
+function minimax(
+    board: Array<number>,
+    game_data: ExtraGameInfo,
+    tt: Array<TTEntry>,
+    alpha: number,
+    beta: number,
+    depth: number,
+    init_depth: number,
+    last_pv: Array<number>,
+    pv: Array<number>,
+    killers: Array<Array<number>>,
+    history_table: Array<Array<number>>,
+    side: number,
+    metrics: Metrics,
+    ext_left: number,
+    init_ext: number,
+    debug: number,
+    can_null: number
+): number {
+    let max: number, i: number, j: number, limit: number, score: number
+    let moves_count: number
+    let result: number
+    let moves: Array<number>
+    let best_move: number
+    let u: Undo
+    let child_pv: Array<number> = [0]
+    // Check if it's a string or an array of nums (declared as char[])
+    let status_buf
+    let in_check: number, is_capture: number
+    let num_ordered_moves: number
+    let top_level = (depth == init_depth)
+    let init_alpha = alpha
+    let tt_move = 0
+    let tt_score
+
+    metrics.total_nodes++
+
+    if (tt) {
+    }
 }
 
 export function engine(
