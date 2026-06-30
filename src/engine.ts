@@ -11,6 +11,19 @@
 // that is risky. This file is where readability goes to
 // die.
 
+// JavaScript (and TypeScript) do not support pointers like
+// C does, which is a problem because the original C code
+// (expectly) uses pointers.
+//
+// As a workaround, arrays in JS are sent to functions via
+// reference instead of copy (like numbers or strings). So
+// we pass a length 1 array to a function and treat arr[0]
+// as the value.
+//
+// The following type is used to indicate that the array
+// is being used like a POINTER, not an ARRAY.
+type NumPointer = Array<number>
+
 const ENGINE_NAME = "FLEDGLING 1.0"
 const EMPTY  = 0
 const WP =  1
@@ -55,7 +68,10 @@ const PASSED_REWARD = 50
 const SAFETY_BONUS = 10
 const OPEN_FILE_KING_PENALTY = 20
 const ORDER_LIMIT = 6
-
+const TT_MASK = 1023
+const TT_FLAG_EXACT = 0
+const TT_FLAG_LOWER = 1
+const TT_FLAG_UPPER = 2
 
 
 const sq_tbl = [    
@@ -303,6 +319,41 @@ const queen_rays = [
     [-1, -2, -3, -4, -5, -6, -7]
 ]
 
+function is_in_check(board: Array<number>, side: number, king_sq: number) {
+    let i;
+    let sq = 0x80
+
+    let dir = (side == WHITE) ? -16 : 16
+    let lcap = king_sq + dir - 1
+    let rcap = king_sq + dir + 1
+
+    if (king_sq & 0x88) return 0
+
+    if (!())
+}
+
+// best_move_out is a ptr!
+function tt_probe(tt: Array<TTEntry>, key: number, alpha: number, beta: number, depth: number, best_move_out: NumPointer) {
+    const entry = tt[key & TT_MASK]
+
+    if (entry.key == key) {
+        if (best_move_out) best_move_out[0] = entry.best_move
+        if (entry.depth >= depth) {
+            switch (entry.flag) {
+                case TT_FLAG_EXACT: return entry.score;
+                case TT_FLAG_LOWER: if (entry.score >= beta) return entry.score;
+                                    break;
+                case TT_FLAG_UPPER: if (entry.score <= beta) return entry.score;
+                                    break;
+            }
+        }
+    } else {
+        if (best_move_out) best_move_out[0] = 0
+    }
+
+    return 32767
+}
+
 function minimax(
     board: Array<number>,
     game_data: ExtraGameInfo,
@@ -341,6 +392,17 @@ function minimax(
     metrics.total_nodes++
 
     if (tt) {
+        const _temp_tt_move = [tt_move]
+        tt_score = tt_probe(tt, game_data.hash, alpha, beta, depth, _temp_tt_move)
+        // Assign back
+        tt_move = _temp_tt_move[0]
+
+        if (tt_score != 32767) {
+            metrics.tt_hits++
+            return tt_score
+        }
+
+        if (ext_left && (depth <= init_depth - 2) && is_in_check)
     }
 }
 

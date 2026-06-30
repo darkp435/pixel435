@@ -16,6 +16,9 @@
 // - Continued working on chess logic, specifically moves.
 // - Realised handling castling and en passant was going
 //   to be a big pain.
+// 30/06
+// - Worked on chess engine because I realised that the
+//   chess logic was gonna be a pain.
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
