@@ -139,7 +139,7 @@ export class ExtraGameInfo {
         public white_king_safety: number,
         public black_king_safety: number,
         public phase: number,
-        public msg_eval: number,
+        public mg_eval: number,
         public eg_modifier: number,
         public hash: number
     ) {}
@@ -329,7 +329,34 @@ function is_in_check(board: Array<number>, side: number, king_sq: number) {
 
     if (king_sq & 0x88) return 0
 
-    if (!())
+    if (!(lcap & 0x88) && board[lcap] == (side * BP)) return 1
+    if (!(rcap & 0x88) && board[rcap] == (side * BP)) return 1
+
+    for (i = 0; i < 8; i++) {
+        sq = king_sq + knight_moves[i]
+        if (sq & 0x88) continue
+        if (board[sq] == (side * BN)) return 1
+    }
+
+    for (i = 0; i < 8; i += 2) {
+        sq = king_sq
+        while (true) {
+            sq += queen_moves[i];
+            if (sq & 0x88) break;
+            if (board[sq] == EMPTY) continue;
+            if (SIGN(board[sq]) == side) break;
+            if (Math.abs(board[sq]) == WR || Math.abs(board[sq]) == WQ) return 1
+            break
+        }
+    }
+
+    for (i = 0; i < 8; i++) {
+        sq = king_sq + queen_moves[i];
+        if (sq & 0x88) continue;
+        if (board[sq] == (side * BK)) return 1;
+    }
+
+    return 0;
 }
 
 // best_move_out is a ptr!
@@ -352,6 +379,88 @@ function tt_probe(tt: Array<TTEntry>, key: number, alpha: number, beta: number, 
     }
 
     return 32767
+}
+
+function BITBOARD_QUERY(HIGH: number, LOW: number, BIT: number) {
+    return ((BIT > 31) ? (HIGH >> (BIT & 31)) : (LOW >> (BIT & 31))) & 1
+}
+
+function pseudo_legal_moves(board: Array<number>, game_data: ExtraGameInfo, moves: Array<number>, use_bitboard: number, block_bitboard_high: NumPointer, block_bitboard_low: NumPointer, only_capt: number, early_return: number) {
+    let i, j, k
+    let m = 0
+    let reverse_search = (early_return ? (game_data.side_to_move == WHITE) : (game_data.side_to_move == BLACK))
+    let loop_increment = (reverse_search ? -1 : 1)
+    let loop_skips = (reverse_search ? -7 : 7)
+    let to
+    let promote_rank, forward, ray_result
+    let target
+    let start_king_sq = (game_data.side_to_move == WHITE) ? game_data.white_king_sq : game_data.black_king_sq
+
+    for (i = (reverse_search ? 127 : 0); (i < 128) && (i >= 0); i += loop_increment) {
+        let i_6b = TO_6BIT(i)
+        let side = SIGN(board[i])
+        let piece = Math.abs(board[i])
+        if (i & 0x88) {
+            i += loop_skips
+            continue
+        }
+        if (side == game_data.side_to_move) {
+            switch (piece) {
+                case 1:
+                    promote_rank = (side == WHITE) ? 0 : 7
+                    forward = (side == WHITE) ? -16 : 16
+
+                    if (!only_capt) {
+                        to = i + forward
+                        if (!(to & 0x88) && board[to] == EMPTY) {
+                            let single_push_bitboard = (!use_bitboard || BITBOARD_QUERY(block_bitboard_high[0], block_bitboard_low[0], TO_6BIT(to)))
+                            if ((to >> 4) == promote_rank) {
+                                if (single_push_bitboard) {
+                                    
+                                }
+                            }
+                        }
+                    }
+            }
+        }
+    }
+}
+
+function STAND_PAT(GAMEDATA: ExtraGameInfo) {
+    return (GAMEDATA.mg_eval + ((GAMEDATA.phase * GAMEDATA.eg_modifier) >> 8)) + GAMEDATA.white_pawn_score - GAMEDATA.black_pawn_score
+}
+
+function quiesce(board: Array<number>, game_data: ExtraGameInfo, alpha: number, beta: number, depth: number, side: number, metrics: Metrics, exts_applied: number) {
+    let static_eval = ((side == WHITE) ? STAND_PAT(game_data) : -STAND_PAT(game_data))
+    let best_value = static_eval
+    let captures_count = 0
+    let moves_count = 0
+    let score
+    let in_check
+    let result
+    let i
+    let u
+    let moves
+    metrics.total_nodes++
+    metrics.q_nodes++
+    in_check = is_in_check(board, game_data.side_to_move, (game_data.side_to_move == WHITE) ? game_data.white_king_sq : game_data.black_king_sq)
+
+    if (in_check) {
+        best_value = -oo
+    }
+
+    if (best_value >= beta) {
+        metrics.beta_cutoffs++
+        return best_value
+    }
+
+    if (best_value > alpha) {
+        alpha = best_value
+    }
+
+    if (depth <= 0) {
+        moves_count = pseudo_legal_moves
+    }
 }
 
 function minimax(
@@ -402,7 +511,16 @@ function minimax(
             return tt_score
         }
 
-        if (ext_left && (depth <= init_depth - 2) && is_in_check)
+        if (ext_left && (depth <= init_depth - 2) && is_in_check(board, side, (side == WHITE) ? game_data.white_king_sq : game_data.black_king_sq)) {
+            ext_left--
+            depth++
+            metrics.extensions++
+        }
+
+        if (depth <= 0) {
+            metrics.horizon_nodes++
+            return quiesce
+        }
     }
 }
 

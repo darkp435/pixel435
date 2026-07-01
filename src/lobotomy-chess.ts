@@ -19,6 +19,12 @@
 // 30/06
 // - Worked on chess engine because I realised that the
 //   chess logic was gonna be a pain.
+// 01/07
+// - Worked on chess engine and saw the pyramid of doom.
+//   Severely regretted life choices. Why does Frank's
+//   code have to be so bad??? Like, is there no other
+//   way to write code without 4 levels of nested
+//   if statements?
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 
