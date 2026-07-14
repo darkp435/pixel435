@@ -28,3 +28,6 @@ src/excuses.js
 src/fence.js
 src/rng.js
 src/users.js
+# WASM output
+src/engine.js
+src/engine.wasm
