@@ -113,12 +113,24 @@ function ENCODE_MOVE(SF: number, T: number, F: number) {
     return (SF << 12) | (T << 6) | F
 }
 
-function DECODE_TEST(X: number) {
+function DECODE_DEST(X: number) {
     return ((X & 0x0E00) >> 5) | ((X & 0x01C0) >> 6)
 }
 
 function DECODE_FROM(X: number) {
     return ((X & 56) << 1) | (X & 7)
+}
+
+function ZOBRIST_CASTLE(rights: number) {
+    return rights * 0x85ebca6b
+}
+
+function ZOBRIST_EP(ep_square: number) {
+    return (ep_square + 1) * 0xc2b2ae35
+}
+
+function ZOBRIST_PIECE_FIX(PIECE: number) {
+    return PIECE > 0 ? PIECE - 1 : -PIECE - 1 + 6
 }
 
 // It's unfortunate, but ExtraGameInfo and Undo must be exported as they are
@@ -163,7 +175,7 @@ export class Undo {
         public white_king_safety: number,
         public black_king_safety: number,
         public phase: number,
-        public msg_eval: number,
+        public mg_eval: number,
         public eg_modifier: number,
         public hash: number
     ) {}
@@ -290,6 +302,8 @@ const null_pst = [
     0,  0,  0,  0,  0,  0,  0,  0
 ];
 
+const ZOBRIST_SIDE = 0x9e3779b9
+
 const mg_table_atlas = [null_pst, mg_pawn_table, knight_table, bishop_table, rook_table, queen_table, mg_king_table]
 const eg_table_atlas = [null_pst, eg_pawn_table, null_pst, null_pst, null_pst, null_pst, eg_king_table]
 const piece_values = [0, 100, 320, 330, 500, 900, 0]
@@ -318,6 +332,307 @@ const queen_rays = [
     [-17, -34, -51, -68, -85, -102, -119],
     [-1, -2, -3, -4, -5, -6, -7]
 ]
+
+function zobrist_piece_square(piece_index: number, square: number) {
+    let x = (piece_index * 1315423911) ^ (square * 2654435761)
+    x ^= (x << 13)
+    x ^= (x >> 17)
+    x ^= (x << 5)
+    return x
+}
+
+function compute_pawn_score(board: Array<number>, side: number, my_pawn_structure: NumPointer, opp_pawn_structure: NumPointer, pawn_score: NumPointer) {
+    pawn_score[0] = 0
+
+    if (!(my_pawn_structure[0] & 0x1c0000)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 21) & 7)
+    if (!(my_pawn_structure[0] & 0xe38000)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 18) & 7)
+    if (!(my_pawn_structure[0] & 0x1c7000)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 15) & 7)
+    if (!(my_pawn_structure[0] & 0x038e00)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 12) & 7)
+    if (!(my_pawn_structure[0] & 0x0071C0)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 9) & 7);
+    if (!(my_pawn_structure[0] & 0x000E38)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 6) & 7);
+    if (!(my_pawn_structure[0] & 0x0001C7)) pawn_score[0] -= ISOLATION_PENALTY * ((my_pawn_structure[0] >> 3) & 7);
+    if (!(my_pawn_structure[0] & 0x000038)) pawn_score[0] -= ISOLATION_PENALTY * (my_pawn_structure[0] & 7);
+    
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 21) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 18) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 15) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 12) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 9) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 6) & 7];
+    pawn_score[0] -= doubled_penalty[(my_pawn_structure[0] >> 3) & 7];
+    pawn_score[0] -= doubled_penalty[my_pawn_structure[0] & 7];
+
+    if (!(opp_pawn_structure[0] & 0xFC0000)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 21) & 7);
+    if (!(opp_pawn_structure[0] & 0xFF8000)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 18) & 7);
+    if (!(opp_pawn_structure[0] & 0x1FF000)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 15) & 7);
+    if (!(opp_pawn_structure[0] & 0x03FE00)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 12) & 7);
+    if (!(opp_pawn_structure[0] & 0x007FC0)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 9) & 7);
+    if (!(opp_pawn_structure[0] & 0x000FF8)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 6) & 7);
+    if (!(opp_pawn_structure[0] & 0x0001FF)) pawn_score[0] += PASSED_REWARD * ((my_pawn_structure[0] >> 3) & 7);
+    if (!(opp_pawn_structure[0] & 0x00003F)) pawn_score[0] += PASSED_REWARD * (my_pawn_structure[0] & 7);
+}
+
+function make_move(board: Array<number>, game_data: ExtraGameInfo, move: NumPointer, undo: Undo, update_eval: number) {
+    let origin = DECODE_FROM(move[0])
+    let dest = DECODE_DEST(move[0])
+    let side_is_white = (game_data.side_to_move == WHITE)
+    let from_pst = side_is_white ? TO_6BIT(origin) : TO_6BIT_C(origin)
+    let to_pst = side_is_white ? TO_6BIT(dest) : TO_6BIT_C(dest)
+    let pawn_struct_updated = 0
+    let piece_type = Math.abs(board[origin])
+    let mg_delta = 0
+    let eg_delta = 0
+    undo.move = move[0]
+    undo.captured = board[dest];
+    undo.castling = game_data.castling;
+    undo.ep_square = game_data.ep_square;
+    undo.halfmove_clock = game_data.halfmove_clock;
+    undo.fullmove_clock = game_data.fullmove_clock;
+    undo.side_to_move = game_data.side_to_move;
+    undo.black_king_sq = game_data.black_king_sq;
+    undo.white_king_sq = game_data.white_king_sq;
+    undo.black_pawn_struct = game_data.black_pawn_struct;
+    undo.white_pawn_struct = game_data.white_pawn_struct;
+    undo.black_pawn_score = game_data.black_pawn_score;
+    undo.white_pawn_score = game_data.white_pawn_score;
+    undo.black_king_safety = game_data.black_king_safety;
+    undo.white_king_safety = game_data.white_king_safety;
+    undo.phase = game_data.phase;
+    undo.mg_eval = game_data.mg_eval;
+    undo.eg_modifier = game_data.eg_modifier;
+    undo.hash = game_data.hash;
+    
+    switch (piece_type) {
+        case WK:
+            game_data.castling &= ~(3 << (1 + game_data.side_to_move))
+            if (side_is_white) {
+                game_data.white_king_sq = dest
+            } else {
+                game_data.black_king_sq = dest
+            }
+            break
+        case WR:
+            if (origin == 0x70)
+                game_data.castling &= ~4
+            else if (origin == 0x77)
+                game_data.castling &= ~8
+            else if (origin == 0x00)
+                game_data.castling &= ~1
+            else if (origin == 0x07)
+                game_data.castling &= ~2
+            break
+        case WP:
+            game_data.halfmove_clock = -1
+            break
+    }
+
+    if (Math.abs(undo.captured) == WR) {
+        if (dest == 0x70)
+            game_data.castling &= ~4
+        else if (dest == 0x77)
+            game_data.castling &= ~8
+        else if (dest == 0x00)
+            game_data.castling &= ~1
+        else if (dest == 0x07)
+            game_data.castling &= ~2
+    }
+
+    // # 548 COMMENTED if (game_data->castling ^ undo->castling) {
+    game_data.hash ^= ZOBRIST_CASTLE(undo.castling)
+    game_data.hash ^= ZOBRIST_CASTLE(game_data.castling)
+
+    switch (move[0] >> 12) {
+        case FLAG_CASTLE_S:
+            board[origin + 2] = board[origin]
+            board[origin + 1] = board[origin + 3]
+            board[origin] = EMPTY
+            board[origin + 3] = EMPTY
+
+            if (update_eval) {
+                mg_delta -= mg_king_table[from_pst]
+                mg_delta += mg_king_table[to_pst]
+
+                eg_delta -= eg_king_table[from_pst]
+                eg_delta += eg_king_table[to_pst]
+
+                mg_delta -= rook_table[side_is_white ? TO_6BIT(origin + 3) : TO_6BIT_C(origin + 3)]
+                mg_delta += rook_table[side_is_white ? TO_6BIT(origin + 1) : TO_6BIT_C(origin + 1)]
+
+                eg_delta -= rook_table[side_is_white ? TO_6BIT(origin + 3) : TO_6BIT_C(origin + 3)]
+                eg_delta += rook_table[side_is_white ? TO_6BIT(origin + 1) : TO_6BIT_C(origin + 1)]
+            }
+
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin + 2]),origin)
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin + 2]), origin + 2)
+
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin + 1]), origin + 3)
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin + 1]), origin + 1)
+
+            break
+        case FLAG_CASTLE_L:
+            board[origin - 2] = board[origin]
+            board[origin - 1] = board[origin - 4]
+            board[origin] = EMPTY
+            board[origin - 4] = EMPTY
+
+            if (update_eval) {
+                mg_delta -= mg_king_table[from_pst]
+                mg_delta += mg_king_table[to_pst]
+
+                eg_delta -= eg_king_table[from_pst]
+                eg_delta += eg_king_table[to_pst]
+
+                mg_delta -= rook_table[side_is_white ? TO_6BIT(origin - 4) : TO_6BIT_C(origin - 4)]
+                mg_delta += rook_table[side_is_white ? TO_6BIT(origin - 1) : TO_6BIT_C(origin - 1)]
+
+                eg_delta -= rook_table[side_is_white ? TO_6BIT(origin - 4) : TO_6BIT_C(origin - 4)]
+                eg_delta += rook_table[side_is_white ? TO_6BIT(origin - 1) : TO_6BIT_C(origin - 1)]
+            }
+
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin - 2]), origin)
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin - 2]), origin - 2)
+
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin - 1]),origin - 4)
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[origin - 1]), origin - 1)
+            
+            break
+        default:
+            board[dest] = board[origin]
+            board[origin] = EMPTY
+
+            if (update_eval) {
+                mg_delta -= mg_table_atlas[piece_type][from_pst]
+                mg_delta += mg_table_atlas[piece_type][to_pst]
+
+                eg_delta -= eg_table_atlas[piece_type][from_pst]
+                eg_delta += eg_table_atlas[piece_type][to_pst]
+            }
+
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[dest]), origin)
+            game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[dest]), dest)
+
+            if (undo.captured) {
+                game_data.halfmove_clock = -1
+                if (update_eval) {
+                    mg_delta += mg_table_atlas[Math.abs(undo.captured)][side_is_white ? TO_6BIT_C(dest) : TO_6BIT(dest)]
+                    mg_delta += piece_values[Math.abs(undo.captured)]
+
+                    eg_delta += eg_table_atlas[Math.abs(undo.captured)][side_is_white ? TO_6BIT_C(dest) : TO_6BIT(dest)]
+                }
+                if (board[dest] == WP) {
+                    game_data .white_pawn_struct -= (1 << (3 * (origin & 7)))
+                    game_data.white_pawn_struct += (1 << (3 * (dest & 7)))
+                } else if (board[dest] == BP) {
+                    game_data.black_pawn_struct -= (1 << (3 * (origin & 7)))
+                    game_data.black_pawn_struct += (1 << (3 * (dest & 7)))
+                }
+
+                if (undo.captured == WP) {
+                    game_data.white_pawn_struct -= (1 << (3 * (dest & 7)))
+                } else if (undo.captured == BP) {
+                    game_data.black_pawn_struct -= (1 << (3 * (dest & 7)))
+                }
+                game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(undo.captured), dest)
+
+                game_data.phase += phase_weight[Math.abs(undo.captured)]
+            }
+            break
+    }
+
+    if (((move[0]) >> 14) == 1) {
+        if (update_eval) { 
+            mg_delta -= mg_table_atlas[piece_type][to_pst]
+            mg_delta -= piece_values[piece_type]
+
+            eg_delta -= eg_table_atlas[piece_type][to_pst]
+        }
+
+        game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[dest]), dest)
+
+        board[dest] = SIGN(board[dest]) * (((move[0]) >> 12) - 2)
+        game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[dest]), dest)
+
+        if (side_is_white) {
+            game_data.white_pawn_struct -= (1 << (3 * (dest & 7)))
+        } else {
+            game_data.black_pawn_struct -= (1 << (3 * (dest & 7)))
+        }
+
+        game_data.phase -= phase_weight[Math.abs(board[dest])]
+
+        if (update_eval) {
+            mg_delta += mg_table_atlas[Math.abs(board[dest])][to_pst]
+            mg_delta += piece_values[Math.abs(board[dest])]
+            
+            eg_delta += eg_table_atlas[Math.abs(board[dest])][to_pst]
+        }
+    }
+
+    if (((move[0]) >> 12) == FLAG_EP) {
+        if (board[game_data.ep_square] == WP) {
+            game_data.white_pawn_struct -= (1 << (3 * (game_data.ep_square & 7)))
+        } else if (board[game_data.ep_square] == BP) {
+            game_data.black_pawn_struct -= (1 << (3 * (game_data.ep_square & 7)))
+        }
+
+        if (board[dest] == WP) {
+            game_data.white_pawn_struct -= (1 << (3 * (origin & 7)))
+            game_data.white_pawn_struct += (1 << (3 * (dest & 7)))
+        } else if (board[dest] == BP) {
+            game_data.black_pawn_struct -= (1 << (3 * (origin & 7)))
+            game_data.black_pawn_struct += (1 << (3 * (dest & 7)))
+        }
+        game_data.hash ^= zobrist_piece_square(ZOBRIST_PIECE_FIX(board[game_data.ep_square]), game_data.ep_square)
+
+        if (!(game_data.ep_square & 0x88)) board[game_data.ep_square] = EMPTY
+        if (update_eval) {
+            mg_delta += mg_pawn_table[side_is_white ? TO_6BIT_C(game_data.ep_square) : TO_6BIT(game_data.ep_square)]
+            mg_delta += piece_values[WP]
+
+            eg_delta += eg_pawn_table[side_is_white ? TO_6BIT_C(game_data.ep_square) : TO_6BIT(game_data.ep_square)]
+        }
+    }
+
+    if ((undo.white_pawn_struct ^ game_data.white_pawn_struct) || (undo.black_pawn_struct ^ game_data.black_pawn_struct)) {
+        // This is going to get ugly
+        const _game_data_wpstruct = [game_data.white_pawn_struct]
+        const _game_data_bpstruct = [game_data.black_pawn_struct]
+        const _game_data_wpscore = [game_data.white_pawn_score]
+        const _game_data_bpscore = [game_data.black_pawn_score]
+        compute_pawn_score(board, WHITE, _game_data_wpstruct, _game_data_bpstruct, _game_data_wpscore)
+        compute_pawn_score(board, BLACK, _game_data_bpstruct, _game_data_wpstruct, _game_data_bpscore)
+        game_data.white_pawn_struct = _game_data_wpstruct[0]
+        game_data.black_pawn_struct = _game_data_bpstruct[0]
+        game_data.white_pawn_score = _game_data_wpscore[0]
+        game_data.black_pawn_score = _game_data_bpscore[0]
+        pawn_struct_updated = 1
+    }
+
+    if (pawn_struct_updated || Math.abs(board[dest]) == WP || Math.abs(board[dest]) == WK) {
+        // # 728 compute_king_safety func is inlined because its literally only one line and it involves a pointer
+        game_data.white_king_safety = 0
+        game_data.black_king_safety = 0
+    }
+
+    if (((move[0]) >> 12) == FLAG_DOUBLE_STEP) {
+        game_data.ep_square = dest
+    } else {
+        game_data.ep_square = 0x80
+    }
+
+    game_data.hash ^= ZOBRIST_EP(undo.ep_square & 7)
+    game_data.hash ^= ZOBRIST_EP(game_data.ep_square & 7)
+
+    game_data.mg_eval += (side_is_white ? mg_delta : -mg_delta)
+    game_data.eg_modifier += (side_is_white ? eg_delta : -eg_delta)
+
+    game_data.side_to_move = -(game_data.side_to_move)
+
+    game_data.hash ^= ZOBRIST_SIDE
+
+    game_data.halfmove_clock++
+    if (!side_is_white) game_data.fullmove_clock++
+}
 
 function is_in_check(board: Array<number>, side: number, king_sq: number) {
     let i;
@@ -357,6 +672,20 @@ function is_in_check(board: Array<number>, side: number, king_sq: number) {
     }
 
     return 0;
+}
+
+function single_legality_check(board: Array<number>, game_data: ExtraGameInfo, move_to_check: NumPointer, king_sq: number) {
+    // # 950 Undo is initialised in original code, but TS complains about it being undefined
+    // All the values are getting overwritten anyways so we just initialise it with whatever
+    let u = new Undo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    let return_val = 0
+    make_move(board, game_data, move_to_check, u, 0)
+    switch(u.move >> 12) {
+        case FLAG_CASTLE_S:
+            if (
+
+            )
+    }
 }
 
 // best_move_out is a ptr!
@@ -416,7 +745,8 @@ function pseudo_legal_moves(board: Array<number>, game_data: ExtraGameInfo, move
                             let single_push_bitboard = (!use_bitboard || BITBOARD_QUERY(block_bitboard_high[0], block_bitboard_low[0], TO_6BIT(to)))
                             if ((to >> 4) == promote_rank) {
                                 if (single_push_bitboard) {
-                                    
+                                    moves[m++] = ENCODE_MOVE(FLAG_PROMO_Q, TO_6BIT(to), i_6b)
+                                    if (early_return && single_legality_check(board, game_data, moves + m - 1, start_king_sq)) return m
                                 }
                             }
                         }
