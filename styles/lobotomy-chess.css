@@ -3,4 +3,34 @@
     grid-template-columns: repeat(8, 45px);
     grid-template-rows: repeat(8, 45px);
     gap: 0px;
+    border: 1px solid black;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.chess-button {
+    border-radius: 0px;
+    border: 0px;
+}
+
+.black-tile {
+    background-color: #ff7700;
+}
+
+.black-tile:hover {
+    background-color: #c55c00;
+}
+
+.white-tile {
+    background-color: #ffffff;
+}
+
+.white-tile:hover {
+    background-color: #c3c3c3;
 }

@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cstddef>
+#include <string>
 
-#define ENGINE_NAME "FLEDGLING v1.0"
 #define EMPTY 0
 #define WP 1
 #define WN 2
@@ -86,16 +87,15 @@
 #define ZOBRIST_CASTLE(rights) (rights * 0x85ebca6bu)
 #define ZOBRIST_EP(ep_square) ((ep_square + 1) * 0xc2b2ae35u)
 
-typedef char Piece;
-typedef unsigned short Move;
-typedef unsigned char Square;
-typedef unsigned long HalfBitboard;
-typedef unsigned long Zobrist;
+using Piece = char;
+using Move = unsigned short;
+using Square = unsigned char;
+using HalfBitboard = unsigned long;
+using Zobrist = unsigned long;
 
-const char special[] = "    NBRQDSL E";
-const char ranks[] = "87654321";
-const char files[] = "abcdefgh";
-const char piece_names[] = " PNBRQK";
+constexpr char ranks[] = "87654321";
+constexpr char files[] = "abcdefgh";
+constexpr char piece_names[] = " PNBRQK";
 
 typedef struct {
     unsigned char castling; // KQkq 1 = can 0 = can't
@@ -149,6 +149,108 @@ typedef struct {
     short final_eval;
 } Metrics;
 
+#pragma region Offset calculations
+// ------------------------------ WebAssembly Helper ------------------------------
+// These are functions not part of the chess engine and wrote by a different person
+// than the person who wrote this chess engine. It contains the helper function
+// get_offset to return necessary padding for the TS/JS side of WebAssembly.
+
+#define UNDO_OFFSETOF(x) offsetof(Undo, x)
+#define EGI_OFFSETOF(x) offsetof(ExtraGameInfo, x)
+#define METRICS_OFFSETOF(x) offsetof(Metrics, x)
+
+struct Entry {
+    std::string_view name;
+    size_t bytes;
+};
+
+constexpr Entry UndoOffsets[] = {
+    {"move", UNDO_OFFSETOF(move)},
+    {"captured", UNDO_OFFSETOF(captured)},
+    {"castling", UNDO_OFFSETOF(castling)},
+    {"ep_square", UNDO_OFFSETOF(ep_square)},
+    {"halfmove_clock", UNDO_OFFSETOF(halfmove_clock)},
+    {"fullmove_clock", UNDO_OFFSETOF(fullmove_clock)},
+    {"side_to_move", UNDO_OFFSETOF(side_to_move)},
+    {"black_king_sq", UNDO_OFFSETOF(black_king_sq)},
+    {"white_king_sq", UNDO_OFFSETOF(white_king_sq)},
+    {"black_pawn_struct", UNDO_OFFSETOF(black_pawn_struct)},
+    {"white_pawn_struct", UNDO_OFFSETOF(white_pawn_struct)},
+    {"black_pawn_score", UNDO_OFFSETOF(black_pawn_score)},
+    {"white_pawn_score", UNDO_OFFSETOF(white_pawn_score)},
+    {"white_king_safety", UNDO_OFFSETOF(white_king_safety)},
+    {"black_king_safety", UNDO_OFFSETOF(black_king_safety)},
+    {"phase", UNDO_OFFSETOF(phase)},
+    {"mg_eval", UNDO_OFFSETOF(mg_eval)},
+    {"eg_modifier", UNDO_OFFSETOF(eg_modifier)},
+    {"hash", UNDO_OFFSETOF(hash)},
+    {"_null", 0}
+};
+
+constexpr Entry EGIOffsets[] = {
+    {"castling", EGI_OFFSETOF(castling)},
+    {"ep_square", EGI_OFFSETOF(ep_square)},
+    {"halfmove_clock", EGI_OFFSETOF(halfmove_clock)},
+    {"fullmove_clock", EGI_OFFSETOF(fullmove_clock)},
+    {"side_to_move", EGI_OFFSETOF(side_to_move)},
+    {"black_king_sq", EGI_OFFSETOF(black_king_sq)},
+    {"white_king_sq", EGI_OFFSETOF(white_king_sq)},
+    {"black_pawn_struct", EGI_OFFSETOF(black_pawn_struct)},
+    {"white_pawn_struct", EGI_OFFSETOF(white_pawn_struct)},
+    {"black_pawn_score", EGI_OFFSETOF(black_pawn_score)},
+    {"white_pawn_score", EGI_OFFSETOF(white_pawn_score)},
+    {"white_king_safety", EGI_OFFSETOF(white_king_safety)},
+    {"black_king_safety", EGI_OFFSETOF(black_king_safety)},
+    {"phase", EGI_OFFSETOF(phase)},
+    {"mg_eval", EGI_OFFSETOF(mg_eval)},
+    {"eg_modifier", EGI_OFFSETOF(eg_modifier)},
+    {"hash", EGI_OFFSETOF(hash)},
+    {"_null", 0}
+};
+
+constexpr Entry MetricsOffsets[] = {
+    {"total_nodes", METRICS_OFFSETOF(total_nodes)},
+    {"horizon_nodes", METRICS_OFFSETOF(horizon_nodes)},
+    {"q_nodes", METRICS_OFFSETOF(q_nodes)},
+    {"beta_cutoffs", METRICS_OFFSETOF(beta_cutoffs)},
+    {"extensions", METRICS_OFFSETOF(extensions)},
+    {"tt_hits", METRICS_OFFSETOF(tt_hits)},
+    {"final_eval", METRICS_OFFSETOF(final_eval)},
+    {"_null", 0}
+};
+
+size_t lookup(const Entry table[], std::string_view member) {
+    char index = 0;
+    Entry entry = table[index];
+    while (entry.name != "_null") {
+        if (entry.name == member) return entry.bytes;
+        index++;
+        entry = table[index];
+    }
+    return static_cast<size_t>(-1);
+}
+
+/**
+ * Returns the offset of a class member.
+ * @param class_name The name of the C struct the member is queried from. It can either be Undo, Metrics, or ExtraGameInfo.
+ * @param member The member that you wish to get the offset of.
+ * @returns Offset, in bytes, of the member.
+ */
+extern "C" size_t get_offset(const char* class_name, const char* member) {
+    if (class_name == "Undo") {
+        return lookup(UndoOffsets, member);
+    } else if (class_name == "Metrics") {
+        return lookup(MetricsOffsets, member);
+    } else if (class_name == "ExtraGameInfo") {
+        return lookup(EGIOffsets, member);
+    } else {
+        return static_cast<size_t>(-1);
+    }
+}
+
+// Back to C89 we go, lads!
+#pragma endregion
+
 typedef struct {
     Zobrist key; // 4B
     short score; // 2B
@@ -159,7 +261,7 @@ typedef struct {
 
 typedef unsigned short Texture;
 
-const Square sq_tbl[128] = {    
+constexpr Square sq_tbl[128] = {    
     0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0,
     8,  9,  10, 11, 12, 13, 14, 15, 0,  0,  0,  0,  0,  0,  0,  0,
     16, 17, 18, 19, 20, 21, 22, 23, 0,  0,  0,  0,  0,  0,  0,  0,
@@ -170,7 +272,7 @@ const Square sq_tbl[128] = {
     56, 57, 58, 59, 60, 61, 62, 63, 0,  0,  0,  0,  0,  0,  0,  0
 };
 
-const Square sq_tbl_c[128] = {
+constexpr Square sq_tbl_c[128] = {
     56, 57, 58, 59, 60, 61, 62, 63, 0,  0,  0,  0,  0,  0,  0,  0,
     48, 49, 50, 51, 52, 53, 54, 55, 0,  0,  0,  0,  0,  0,  0,  0,
     40, 41, 42, 43, 44, 45, 46, 47, 0,  0,  0,  0,  0,  0,  0,  0,
@@ -181,7 +283,7 @@ const Square sq_tbl_c[128] = {
     0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0
 };
 
-const char mg_pawn_table[64] = {
+constexpr char mg_pawn_table[64] = {
      0,  0,  0,  0,  0,  0,  0,  0,
     50, 50, 50, 50, 50, 50, 50, 50,
     10, 10, 20, 30, 30, 20, 10, 10,
@@ -192,7 +294,7 @@ const char mg_pawn_table[64] = {
     0,  0,  0,  0,  0,  0,  0,  0
 };
 
-const char eg_pawn_table[64] = {
+constexpr char eg_pawn_table[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
     30, 30, 30, 30, 30, 30, 30, 30,
     40, 40, 30, 20, 20, 30, 40, 40,
@@ -203,7 +305,7 @@ const char eg_pawn_table[64] = {
     0,  0,  0,  0,  0,  0,  0,  0
 };
 
-const char knight_table[64] = {
+constexpr char knight_table[64] = {
     -50,-40,-30,-30,-30,-30,-40,-50,
     -40,-20,  0,  0,  0,  0,-20,-40,
     -30,  0, 10, 15, 15, 10,  0,-30,
@@ -214,7 +316,7 @@ const char knight_table[64] = {
     -50,-20,-30,-30,-30,-30,-20,-50,
 };
 
-const char bishop_table[64] = {
+constexpr char bishop_table[64] = {
     -20,-10,-10,-10,-10,-10,-10,-20,
     -10,  0,  0,  0,  0,  0,  0,-10,
     -10,  0,  5, 10, 10,  5,  0,-10,
@@ -225,7 +327,7 @@ const char bishop_table[64] = {
     -20,-10,-10,-10,-10,-10,-10,-20,
 };
 
-const char rook_table[64] = {
+constexpr char rook_table[64] = {
      0,  0,  0,  0,  0,  0,  0,  0,
      5, 10, 10, 10, 10, 10, 10,  5,
     -5,  0,  0,  0,  0,  0,  0, -5,
@@ -236,7 +338,7 @@ const char rook_table[64] = {
     -5, -5, -5,  0,  0, -5, -5, -5
 };
 
-const char queen_table[64] = {
+constexpr char queen_table[64] = {
     -20,-10,-10, -5, -5,-10,-10,-20,
     -10,  0,  0,  0,  0,  0,  0,-10,
     -10,  0,  5,  5,  5,  5,  0,-10,
@@ -247,7 +349,7 @@ const char queen_table[64] = {
     -20,-10,-10, -5, -5,-10,-10,-20
 };
 
-const char mg_king_table[64] = {
+constexpr char mg_king_table[64] = {
     -30,-40,-40,-50,-50,-40,-40,-30,
     -30,-40,-40,-50,-50,-40,-40,-30,
     -30,-40,-40,-50,-50,-40,-40,-30,
@@ -258,7 +360,7 @@ const char mg_king_table[64] = {
     20, 30, 20,  0,  5, 10, 30, 20
 };
 
-const char eg_king_table[64] = {
+constexpr char eg_king_table[64] = {
      10, 30, 30, 40, 40, 30, 30, 10,
      25, 40, 45, 55, 55, 45, 40, 25,
      20, 35, 60, 80, 80, 60, 35, 20,
@@ -269,7 +371,7 @@ const char eg_king_table[64] = {
     -70,-60,-50,-30,-30,-40,-60,-70
 };
 
-const char null_pst[64] = {
+constexpr char null_pst[64] = {
     0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -288,23 +390,23 @@ const char* eg_table_atlas[7] = {
     null_pst, eg_pawn_table, null_pst, null_pst, null_pst, null_pst, eg_king_table
 };
 
-const short piece_values[7] = {
+constexpr short piece_values[7] = {
     0, 100, 320, 330, 500, 900, 0
 };
 
-const short PROMOTION_VALUES[4] = {
+constexpr short PROMOTION_VALUES[4] = {
     2, 3, 5, 9
 };
 
-const short phase_weight[7] = {
+constexpr short phase_weight[7] = {
     0, 0, 11, 11, 21, 42, 0
 };
 
-const short doubled_penalty[8] = {
+constexpr short doubled_penalty[8] = {
     0, 0, 20, 20, 20, 20, 20, 20
 };
 
-const char MVV_LVA[7][7] = {
+constexpr char MVV_LVA[7][7] = {
     // attacker → columns
     // victim ↓   N   P   N   B   R   Q   K
     {0, 0, 0, 0, 0, 0, 0}, // none
@@ -316,10 +418,10 @@ const char MVV_LVA[7][7] = {
     {0,0,0,0,0,0,0},       // king captures are rare
 };
 
-const char knight_moves[] = {31, 33, 14, 18, -31, -33, -14, -18};
-const char queen_moves[] = {15, 16, 17, 1, -15, -16, -17, -1};
+constexpr char knight_moves[] = {31, 33, 14, 18, -31, -33, -14, -18};
+constexpr char queen_moves[] = {15, 16, 17, 1, -15, -16, -17, -1};
 
-const char queen_rays[8][7] = {
+constexpr char queen_rays[8][7] = {
     {15, 30, 45, 60, 75, 90, 105},
     {16, 32, 48, 64, 80, 96, 112},
     {17, 34, 51, 68, 85, 102, 119},
@@ -1780,7 +1882,7 @@ short minimax(
     return max;
 }
 
-extern "C" void engine(Piece board[], ExtraGameInfo* game_data, short max_depth, Undo* last_move, char history[][16], Metrics* metrics) {
+extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move, char history[][16], Metrics* metrics) {
     int iter_depth, i;
     short engine_eval;
 
@@ -1801,7 +1903,7 @@ extern "C" void engine(Piece board[], ExtraGameInfo* game_data, short max_depth,
     
     engine_eval = minimax(board, game_data, tt, -oo, oo, 1, 1, NULL, pv, killers, history_table, game_data->side_to_move, metrics, 1, 1, 0, 1);
     memcpy(last_pv, pv, sizeof(Move));
-    for (iter_depth = 2; iter_depth <= max_depth; iter_depth++) {
+    for (iter_depth = 2; iter_depth <= MAX_DEPTH; iter_depth++) {
         engine_eval = minimax(board, game_data, tt, -oo, oo, iter_depth, iter_depth, NULL, pv, killers, history_table, game_data->side_to_move, metrics, ((iter_depth + 1) >> 1), ((iter_depth + 1) >> 1), 0, 1);
         memcpy(last_pv, pv, iter_depth * sizeof(Move));
     }

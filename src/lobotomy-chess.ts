@@ -27,6 +27,8 @@
 //   if statements?
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
+import createModule from "./engine.js"
+const Module = await createModule()
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -79,22 +81,27 @@ class Board {
 
         // NOTE: this is inverted due to array indexing!
         this.grid = [
-            [CP.WRook, CP.WKnight, CP.WBishop, CP.WKing, CP.WQueen, CP.WBishop, CP.WKnight, CP.WRook],
+            [CP.WRook, CP.WKnight, CP.WBishop, CP.WQueen, CP.WKing, CP.WBishop, CP.WKnight, CP.WRook],
             [CP.WPawn, CP.WPawn, CP.WPawn, CP.WPawn, CP.WPawn, CP.WPawn, CP.WPawn, CP.WPawn],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             [CP.BPawn, CP.BPawn, CP.BPawn, CP.BPawn, CP.BPawn, CP.BPawn, CP.BPawn, CP.BPawn],
-            [CP.BRook, CP.BKnight, CP.BBishop, CP.BKing, CP.BQueen, CP.BBishop, CP.BKnight, CP.BRook]
+            [CP.BRook, CP.BKnight, CP.BBishop, CP.BQueen, CP.BKing, CP.BBishop, CP.BKnight, CP.BRook]
         ]
     }
 
     getPiece(coord: GridCoord): ChessPiece | null
     getPiece(row: number, col: number): ChessPiece | null
-    getPiece(param1: number | GridCoord, col?: number): ChessPiece | null {
+    getPiece(id: string): ChessPiece | null
+    getPiece(param1: number | GridCoord | string, col?: number): ChessPiece | null {
         if (param1 instanceof GridCoord) {
             return this.grid[param1.row][param1.col]
+        }
+        if (typeof(param1) === 'string') {
+            const coord = idToGridCoord(param1)
+            return this.grid[coord.row][coord.col]
         }
         if (col === undefined) {
             console.error("error: col wasn't provided! (getPiece)")
@@ -112,35 +119,56 @@ class Board {
     }
 
     /** Assuming enemy side is black. */
-    private isEnemyPiece(coord: GridCoord) {
+    isEnemyPiece(coord: GridCoord) {
         const piece = this.getPiece(coord)
         return piece === ChessPiece.BBishop || piece === ChessPiece.BKing || piece === ChessPiece.BKnight || piece === ChessPiece.BPawn || piece === ChessPiece.BQueen || piece === ChessPiece.BRook
     }
 
-    private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
-        // Pawns can't move backwards nor sideways
-        if (to.row <= from.row ||
-            to.row - from.row > 2 ||
-            Math.abs(to.col - from.col) > 1 ||
-            // Capture
-            (to.row === from.row + 1 && difference(to.col, from.col) === 1 && !this.isEnemyPiece(to))
-        ) {
-            return false
-        }
+    private _promote(coord: GridCoord) {
 
-        // Update en passant if applicable
-        if (difference(to.row, from.row) === 2 && difference(to.col, from.col) === 0 && from.row === 1) {
-            this.enPassant = new GridCoord(3, to.col)
-        }
-
-        return true;
     }
 
-    private __isPieceInBetween(start: number, stop: number, condition: (i: number) => boolean) {
-        for (let i = start; i < stop; i++) {
+    private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
+        if ((to.row - from.row === 1 && difference(from.col, to.col) === 0 && this.getPiece(to) === null) || // One square forward
+            (to.row - from.row === 1 && difference(from.col, to.col) === 1 && this.getPiece(to) !== null) // Regular capture
+        ) {
+            this.enPassant = null
+            return true
+        }
+
+        if (to.row - from.row === 2 && 
+            difference(from.col, to.col) === 0 && 
+            from.row === 1 && 
+            this.getPiece(to) === null 
+            && this.getPiece(to.row - 1, to.col) === null
+        ) {
+            this.enPassant = new GridCoord(to.row - 1, to.col)
+            return true
+        }
+
+        // En passant
+        if (this.enPassant !== null && to.isEqual(this.enPassant)) {
+            this.setPiece(new GridCoord(this.enPassant.row - 1, this.enPassant.col), null)
+            this.enPassant = null
+            return true
+        }
+        
+        return false
+    }
+
+    private __isPieceInBetween(stop: number, condition: (i: number) => boolean) {
+        for (let i = 1; i < stop; i++) {
+            // This is needed because pieces move differently
             if (condition(i)) return true
         }
         return false
+    }
+
+    private _checkKnightLegality(from: GridCoord, to: GridCoord): boolean {
+        return (
+            (difference(from.col, to.col) === 2 && difference(from.row, to.row) === 1) ||
+            (difference(from.row, to.row) === 2 && difference(from.col, to.col) === 1)
+        )
     }
 
     private _checkBishopLegality(from: GridCoord, to: GridCoord): boolean {
@@ -148,20 +176,30 @@ class Board {
         if (difference(from.col, to.col) !== difference(from.row, to.row)) return false
         // Now the pain part: checking every space to see if theres a piece in between.
         // Moved up right
+        const displacement = difference(from.col, to.col)
         if (to.row > from.row && to.col > from.col) {
-            this.__isPieceInBetween(from.col, to.col, (i) => this.getPiece(from.row + i, from.col + i) === null)
+            if (this.__isPieceInBetween(displacement, (i) => this.getPiece(from.row + i, from.col + i) !== null)) return false
+        // Moved up left
+        } else if (to.row > from.row && from.col > to.col) {
+            if (this.__isPieceInBetween(displacement, (i) => this.getPiece(from.row + i, from.col - i) !== null)) return false
+        // Moved down left
+        } else if (to.row < from.row && from.col > to.col) {
+            if (this.__isPieceInBetween(displacement, (i) => this.getPiece(from.row - i, from.col - i) !== null)) return false
+        // Moved down right
+        } else {
+            if (this.__isPieceInBetween(displacement, (i) => this.getPiece(from.row - i, from.col + i) !== null)) return false
         }
         return true;
     }
 
     private _checkRookLegality(from: GridCoord, to: GridCoord): boolean {
         // Castling is handled in _checkKingLegality because the user moves their king.
-        if (difference(from.col, to.col) >= 1 && difference(from.col, to.col) >= 1) return false
+        if (difference(from.col, to.col) >= 1 && difference(from.row, to.row) >= 1) return false
         // Moving horizontally
         if (difference(from.row, to.row) === 0) {
             // Moving right
             if (to.col > from.col) {
-                for (let i = from.col; i < to.col; i++) {
+                for (let i = from.col + 1; i < to.col; i++) {
                     if (this.getPiece(from.row, i) !== null) return false
                 }
             } else {
@@ -198,7 +236,18 @@ class Board {
         // 2. The king cannot castle out of check
         // 3. Both the king and the rook can'tve moved previously
         // 4. All squares in the path must be empty
-        return true;
+        // Castling is done by moving king two squares horizontally in this game.
+        
+        const offsets = [
+            [0, -1], [0, 1], [1, 0], [-1, 0],
+            [1, 1], [1, -1], [-1, 1], [-1, -1]
+        ]
+
+        for (const offset of offsets) {
+            const coord = new GridCoord(to.row + offset[0], to.col + offset[1])
+            if (coord.isEqual(from)) return true
+        }
+        return false;
     }
 
     // For player only
@@ -227,22 +276,24 @@ class Board {
                 if (!this._checkPawnLegality(from, to)) return false
                 break
             case ChessPiece.WKnight:
-                // Knight can jump over pieces
-                // so it's pretty much always legal
-                // unless leaving king in check (which
-                // is checked later)
+                if (!this._checkKnightLegality(from, to)) return false
+                this.enPassant = null
                 break
             case ChessPiece.WBishop:
                 if (!this._checkBishopLegality(from, to)) return false
+                this.enPassant = null
                 break
             case ChessPiece.WRook:
                 if (!this._checkRookLegality(from, to)) return false
+                this.enPassant = null
                 break
             case ChessPiece.WQueen:
                 if (!this._checkQueenLegality(from, to)) return false
+                this.enPassant = null
                 break
             case ChessPiece.WKing:
                 if (!this._checkKingLegality(from, to)) return false
+                this.enPassant = null
                 break
             default:
                 // Shouldn't run.
@@ -257,6 +308,12 @@ class Board {
         if (!this.isLegalMove(from, to)) {
             return
         }
+
+        const pieceType = this.getPiece(from)
+        this.setPiece(from, null)
+        document.getElementById(`${from.row}-${from.col}`)!.textContent = ""
+        this.setPiece(to, pieceType)
+        document.getElementById(`${to.row}-${to.col}`)!.textContent = pieceToDisplay(pieceType)
     }
 }
 
@@ -269,12 +326,12 @@ const _chessPieceMap = new Map<ChessPiece, string>()
 // instead of characters "when the time is ripe"
 function pieceToDisplay(piece: ChessPiece | null) {
     if (!_chessPieceMap.size) {
-        _chessPieceMap.set(ChessPiece.WPawn, "P")
-        _chessPieceMap.set(ChessPiece.WBishop, "B")
-        _chessPieceMap.set(ChessPiece.WRook, "R")
-        _chessPieceMap.set(ChessPiece.WQueen, "Q")
-        _chessPieceMap.set(ChessPiece.WKnight, "N")
-        _chessPieceMap.set(ChessPiece.WKing, "K")
+        _chessPieceMap.set(ChessPiece.WPawn, "WP")
+        _chessPieceMap.set(ChessPiece.WBishop, "WB")
+        _chessPieceMap.set(ChessPiece.WRook, "WR")
+        _chessPieceMap.set(ChessPiece.WQueen, "WQ")
+        _chessPieceMap.set(ChessPiece.WKnight, "WN")
+        _chessPieceMap.set(ChessPiece.WKing, "WK")
         _chessPieceMap.set(ChessPiece.BPawn, "BP")
         _chessPieceMap.set(ChessPiece.BKnight, "BN")
         _chessPieceMap.set(ChessPiece.BBishop, "BB")
@@ -288,12 +345,41 @@ function pieceToDisplay(piece: ChessPiece | null) {
     return _chessPieceMap.get(piece) || ""
 }
 
+function idToGridCoord(id: string) {
+    const split = id.split('-')
+    return new GridCoord(parseInt(split[0]), parseInt(split[1]))
+}
+
+const domBoard = document.getElementById("chess-board") as HTMLDivElement
+
 // Created via JS to avoid a gigantic HTML file
-for (let i = 0; i < 8; i++) {
+// Text tile color
+let black = true
+for (let i = 7; i > -1; i--) {
+    black = !black
     for (let j = 0; j < 8; j++) {
-        let square = document.createElement("button")
+        const square = document.createElement("button")
         square.id = `${i}-${j}`
         square.textContent = pieceToDisplay(board.getPiece(i, j))
+        square.classList.add("chess-button")
+        square.classList.add(black ? "black-tile" : "white-tile")
+        black = !black
         chessBoard.appendChild(square)
     }
 }
+
+let selectedElement: GridCoord | undefined
+
+domBoard.addEventListener('click', (event) => {
+    if (event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
+        const target = event.target
+        const id = target.id
+        const piece = board.getPiece(id)
+        const coord = idToGridCoord(id)
+        if (selectedElement && (board.isEnemyPiece(coord) || piece === null)) {
+            board.move(selectedElement, coord)
+        } else {
+            selectedElement = coord
+        }
+    }
+})

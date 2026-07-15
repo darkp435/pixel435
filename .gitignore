@@ -31,3 +31,4 @@ src/users.js
 # WASM output
 src/engine.js
 src/engine.wasm
+src/engine.d.ts
