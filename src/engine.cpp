@@ -159,16 +159,6 @@ typedef struct {
     Zobrist hash;
 } Undo; // Size: 33 bytes
 
-typedef struct {
-    long total_nodes;
-    long horizon_nodes;
-    long q_nodes;
-    long beta_cutoffs;
-    long extensions;
-    long tt_hits;
-    short final_eval;
-} Metrics;
-
 #pragma region Offset calculations
 // ------------------------------ WebAssembly Helper ------------------------------
 // These are functions not part of the chess engine and wrote by a different person
@@ -177,7 +167,6 @@ typedef struct {
 
 #define UNDO_OFFSETOF(x) offsetof(Undo, x)
 #define EGI_OFFSETOF(x) offsetof(ExtraGameInfo, x)
-#define METRICS_OFFSETOF(x) offsetof(Metrics, x)
 
 struct Entry {
     std::string_view name;
@@ -228,17 +217,6 @@ constexpr Entry EGIOffsets[] = {
     {"_null", 0}
 };
 
-constexpr Entry MetricsOffsets[] = {
-    {"total_nodes", METRICS_OFFSETOF(total_nodes)},
-    {"horizon_nodes", METRICS_OFFSETOF(horizon_nodes)},
-    {"q_nodes", METRICS_OFFSETOF(q_nodes)},
-    {"beta_cutoffs", METRICS_OFFSETOF(beta_cutoffs)},
-    {"extensions", METRICS_OFFSETOF(extensions)},
-    {"tt_hits", METRICS_OFFSETOF(tt_hits)},
-    {"final_eval", METRICS_OFFSETOF(final_eval)},
-    {"_null", 0}
-};
-
 size_t lookup(const Entry table[], std::string_view member) {
     char index = 0;
     Entry entry = table[index];
@@ -260,8 +238,6 @@ extern "C" size_t get_offset(const char* class_name, const char* member) {
     std::string_view _class_name = class_name;
     if (_class_name == "Undo") {
         return lookup(UndoOffsets, member);
-    } else if (_class_name == "Metrics") {
-        return lookup(MetricsOffsets, member);
     } else if (_class_name == "ExtraGameInfo") {
         return lookup(EGIOffsets, member);
     } else {
@@ -1664,7 +1640,7 @@ short absolute_eval_eg(Piece board[], ExtraGameInfo* game_data) {
 
 #define STAND_PAT(GAMEDATA) ((GAMEDATA->mg_eval + ((GAMEDATA->phase * GAMEDATA->eg_modifier) >> 8)) + GAMEDATA->white_pawn_score - GAMEDATA->black_pawn_score)
 
-short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, short depth, char side, Metrics* metrics, short exts_applied) {
+short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, short depth, char side, short exts_applied) {
     short static_eval = ((side == WHITE) ? STAND_PAT(game_data) : -STAND_PAT(game_data));
     short best_value = static_eval;
     short captures_count = 0;
@@ -1676,9 +1652,6 @@ short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, 
     Undo u;
     Move moves[MAX_MOVES];
 
-    metrics->total_nodes++;
-    metrics->q_nodes++;
-
     in_check = is_in_check(board, game_data->side_to_move, (game_data->side_to_move == WHITE) ? game_data->white_king_sq : game_data->black_king_sq);
 
     if (in_check) {
@@ -1686,7 +1659,6 @@ short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, 
     }
 
     if (best_value >= beta) {
-        metrics->beta_cutoffs++;
         return best_value;
     }
     
@@ -1720,14 +1692,13 @@ short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, 
         if ((static_eval + piece_values[abs(board[DECODE_DEST(moves[i])])] + DELTA_MARGIN) < alpha)
             continue; // Delta pruning: If this move cannot possibly raise alpha, skip it
         make_move(board, game_data, &moves[i], &u, 1);
-        score = -quiesce(board, game_data, -beta, -alpha, depth - 1, -side, metrics, exts_applied);
+        score = -quiesce(board, game_data, -beta, -alpha, depth - 1, -side, exts_applied);
         if (score > best_value) {
             best_value = score;
             if (score > alpha) alpha = score;
         }
         unmake_move(board, game_data, &u);
         if (score >= beta) {
-            metrics->beta_cutoffs++;
             return score;
         }
     } 
@@ -1756,7 +1727,6 @@ short minimax(
     Move killers[MAX_EFFECTIVE_DEPTH][KILLERS_COUNT],
     short history_table[][64],
     char side,
-    Metrics* metrics,
     short ext_left,
     short init_ext,
     int debug,
@@ -1777,14 +1747,11 @@ short minimax(
 
     Move tt_move = 0;
     short tt_score;
-
-    metrics->total_nodes++;
     
     if (tt) {
         tt_score = tt_probe(tt, game_data->hash, alpha, beta, depth, &tt_move);
         
         if (tt_score != 32767) {
-            metrics->tt_hits++;
             return tt_score;
         }
     }
@@ -1792,12 +1759,10 @@ short minimax(
     if (ext_left && (depth <= init_depth - 2) && is_in_check(board, side, (side == WHITE) ? game_data->white_king_sq : game_data->black_king_sq)) {
         ext_left--;
         depth++;
-        metrics->extensions++;
     }
 
     if (depth <= 0) {
-        metrics->horizon_nodes++;
-        return quiesce(board, game_data, alpha, beta, init_depth, side, metrics, init_ext - ext_left); // TODO: Test if depth=init_depth or depth=6 is better
+        return quiesce(board, game_data, alpha, beta, init_depth, side, init_ext - ext_left); // TODO: Test if depth=init_depth or depth=6 is better
     }
 
     moves_count = fully_legal_moves(board, game_data, moves, history_table, 1, 0, NULL, NULL, NULL, &in_check, 0, (last_pv) ? last_pv[MAX_DEPTH - depth] : (tt_move ? tt_move : 0), killers ? killers[init_depth - depth - ext_left + init_ext][0] : 0, killers ? killers[init_depth - depth - ext_left + init_ext][1] : 0, killers ? killers[init_depth - depth - ext_left + init_ext][2] : 0);
@@ -1810,7 +1775,6 @@ short minimax(
     if (ext_left && (depth != init_depth) && (moves_count == 1)) {
         ext_left--;
         depth++;
-        metrics->extensions++;
     } // Forced move extension: Extend if there's only one legal move (negligible node cost)
 
     if (can_null && depth >= NULL_MOVE_THRESHOLD && game_data->phase < PHASE_MAXIMUM && !in_check) {
@@ -1820,7 +1784,7 @@ short minimax(
         u.ep_square = game_data->ep_square;
         game_data->ep_square = 0x80; // Clear en-passant when making a null move
 
-        score = -minimax(board, game_data, tt, -beta, -beta + 1, depth - NULL_MOVE_R, init_depth, NULL, NULL, killers, history_table, -side, metrics, ext_left, init_ext, 0, 0); // Disallow double-null-move
+        score = -minimax(board, game_data, tt, -beta, -beta + 1, depth - NULL_MOVE_R, init_depth, NULL, NULL, killers, history_table, -side, ext_left, init_ext, 0, 0); // Disallow double-null-move
 
         game_data->side_to_move = -(game_data->side_to_move);
         game_data->hash ^= ZOBRIST_SIDE;
@@ -1829,12 +1793,10 @@ short minimax(
         if (abs(score) >= MATE && ext_left && (depth != init_depth)) {
             ext_left--;
             depth++;
-            metrics->extensions++;
         } // If NMP yields >MATE, then there is a checkmating threat, so extend
 
         if (score >= beta) {
             if (tt) tt_store(tt, game_data->hash, beta, depth, TT_FLAG_LOWER, 0);
-            metrics->beta_cutoffs++;
             return beta;
         }
     }
@@ -1851,9 +1813,9 @@ short minimax(
         make_move(board, game_data, &moves[i], &u, 1);
 
         if (depth <= LATE_MOVE_DEPTH_CUTOFF || i < LATE_MOVE_THRESHOLD || is_capture || in_check) {
-            score = -minimax(board, game_data, tt, -beta, -alpha, depth - 1, init_depth, (i == 0) ? last_pv : NULL, child_pv, killers, history_table, -side, metrics, ext_left, init_ext, 0, can_null);
+            score = -minimax(board, game_data, tt, -beta, -alpha, depth - 1, init_depth, (i == 0) ? last_pv : NULL, child_pv, killers, history_table, -side, ext_left, init_ext, 0, can_null);
         } else {
-            score = -minimax(board, game_data, tt, -beta, -alpha, depth - 2, init_depth, NULL, child_pv, killers, history_table, -side, metrics, ext_left, init_ext, 0, can_null);
+            score = -minimax(board, game_data, tt, -beta, -alpha, depth - 2, init_depth, NULL, child_pv, killers, history_table, -side, ext_left, init_ext, 0, can_null);
         }
 
         if (history_table) {
@@ -1893,7 +1855,6 @@ short minimax(
                 }
             }
 
-            metrics->beta_cutoffs++;
             return max;
         }
     }
@@ -1903,7 +1864,7 @@ short minimax(
     return max;
 }
 
-extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move, char history[][16], Metrics* metrics) {
+extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move, char history[][16]) {
     int iter_depth, i;
     short engine_eval;
 
@@ -1914,22 +1875,13 @@ extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move,
 
     TTEntry* tt = (TTEntry*)calloc(TT_SIZE, sizeof(TTEntry));
     Move killers[MAX_EFFECTIVE_DEPTH][KILLERS_COUNT] = {0};
-
-    metrics->beta_cutoffs = 0;
-    metrics->extensions = 0;
-    metrics->horizon_nodes = 0;
-    metrics->q_nodes = 0;
-    metrics->total_nodes = 0;
-    metrics->tt_hits = 0;
     
-    engine_eval = minimax(board, game_data, tt, -oo, oo, 1, 1, NULL, pv, killers, history_table, game_data->side_to_move, metrics, 1, 1, 0, 1);
+    engine_eval = minimax(board, game_data, tt, -oo, oo, 1, 1, NULL, pv, killers, history_table, game_data->side_to_move, 1, 1, 0, 1);
     memcpy(last_pv, pv, sizeof(Move));
     for (iter_depth = 2; iter_depth <= MAX_DEPTH; iter_depth++) {
-        engine_eval = minimax(board, game_data, tt, -oo, oo, iter_depth, iter_depth, NULL, pv, killers, history_table, game_data->side_to_move, metrics, ((iter_depth + 1) >> 1), ((iter_depth + 1) >> 1), 0, 1);
+        engine_eval = minimax(board, game_data, tt, -oo, oo, iter_depth, iter_depth, NULL, pv, killers, history_table, game_data->side_to_move, ((iter_depth + 1) >> 1), ((iter_depth + 1) >> 1), 0, 1);
         memcpy(last_pv, pv, iter_depth * sizeof(Move));
     }
-
-    metrics->final_eval = engine_eval * game_data->side_to_move;
 
     if (pv[0]) {
         memmove(history[0], history[1], 3 * 16);
