@@ -29,11 +29,15 @@
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
 const Module = await createModule()
+let nextTurn = true
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
-    isEqual(other: GridCoord) {
-        return other.row == this.row && other.col == this.col
+    isEqual(row: number, col: number): boolean
+    isEqual(other: GridCoord): boolean
+    isEqual(_1: number | GridCoord, _2?: number) {
+        if (_1 instanceof GridCoord) return _1.row === this.row && _1.col === this.col
+        return _1 === this.row && _2 === this.col
     }
 }
 
@@ -42,19 +46,20 @@ function difference(a: number, b: number) {
     return Math.abs(a - b)
 }
 
+// Values assigned to be compatible with engine.cpp
 enum ChessPiece {
-    WPawn,
-    WKnight,
-    WBishop,
-    WRook,
-    WQueen,
-    WKing,
-    BPawn,
-    BKnight,
-    BBishop,
-    BRook,
-    BQueen,
-    BKing
+    WPawn = 1,
+    WKnight = 2,
+    WBishop = 3,
+    WRook = 4,
+    WQueen = 5,
+    WKing = 6,
+    BPawn = -1,
+    BKnight = -2,
+    BBishop = -3,
+    BRook = -4,
+    BQueen = -5,
+    BKing = -6
 }
 
 enum Castle {
@@ -92,6 +97,15 @@ class Board {
         ]
     }
 
+    // Returns true if ONE of the provided coordinates isn't empty.
+    coordsHasPiece(...coords: GridCoord[]) {
+        for (const coord of coords) {
+            if (this.getPiece(coord) !== null) return true
+        }
+
+        return false
+    }
+
     getPiece(coord: GridCoord): ChessPiece | null
     getPiece(row: number, col: number): ChessPiece | null
     getPiece(id: string): ChessPiece | null
@@ -124,8 +138,46 @@ class Board {
         return piece === ChessPiece.BBishop || piece === ChessPiece.BKing || piece === ChessPiece.BKnight || piece === ChessPiece.BPawn || piece === ChessPiece.BQueen || piece === ChessPiece.BRook
     }
 
-    private _promote(coord: GridCoord) {
+    private _promotionHandler(coord: GridCoord, pieceType: ChessPiece) {
+        document.querySelector(".promotion")!.remove()
+        this.setPiece(coord, pieceType)
+        document.getElementById(`${coord.row}-${coord.col}`)!.style.backgroundImage = `url(${pieceToDisplay(pieceType)})`
+        nextTurn = true
+    }
 
+    private _promote(coord: GridCoord) {
+        const rect = document.getElementById(`${coord.row}-${coord.col}`)!.getBoundingClientRect()
+        const promotionBox = document.createElement("div")
+        promotionBox.classList.add("promotion")
+        promotionBox.style.top = `${rect.top + 40}px`
+        console.log(promotionBox.style.top)
+        promotionBox.style.left = `${rect.right}px`
+        console.log(promotionBox.style.left)
+        document.body.appendChild(promotionBox)
+
+        const queen = document.createElement("img")
+        queen.src = "../assets/white-queen.png"
+        queen.alt = "Q"
+        queen.onclick = () => this._promotionHandler(coord, ChessPiece.WQueen)
+        promotionBox.appendChild(queen)
+
+        const rook = document.createElement("img")
+        rook.src = "../assets/white-rook.png"
+        rook.alt = "R"
+        rook.onclick = () => this._promotionHandler(coord, ChessPiece.WRook)
+        promotionBox.appendChild(rook)
+
+        const knight = document.createElement("img")
+        knight.src = "../assets/white-knight.png"
+        knight.alt = "N"
+        knight.onclick = () => this._promotionHandler(coord, ChessPiece.WKnight)
+        promotionBox.appendChild(knight)
+
+        const bishop = document.createElement("img")
+        bishop.src = "../assets/white-bishop.png"
+        bishop.alt = "N"
+        bishop.onclick = () => this._promotionHandler(coord, ChessPiece.WBishop)
+        promotionBox.appendChild(bishop)
     }
 
     private _checkPawnLegality(from: GridCoord, to: GridCoord): boolean {
@@ -154,6 +206,18 @@ class Board {
         }
         
         return false
+    }
+
+    // Flattens the chess board
+    chessBoardToCoolerChessBoard() {
+        const flattened = []
+        for (const row of this.grid) {
+            for (const sq of row) {
+                flattened.push(sq)
+            }
+        }
+
+        return flattened
     }
 
     private __isPieceInBetween(stop: number, condition: (i: number) => boolean) {
@@ -222,21 +286,89 @@ class Board {
                 }
             }
         }
-        return true;
+
+        // Castling rights
+        if (
+            (!from.isEqual(0, 7) && !from.isEqual(0, 0)) ||
+            // Castling rights already sacrificed
+            this.castle == Castle.None
+        ) return true
+
+        // Castle.None is unreachable here.
+        switch (this.castle) {
+        case Castle.Both:
+            if (from.isEqual(0, 0)) this.castle = Castle.Short
+            if (from.isEqual(0, 7)) this.castle = Castle.Long
+            break
+        case Castle.Long:
+            if (from.isEqual(0, 0)) this.castle = Castle.None
+            break
+        case Castle.Short:
+            if (from.isEqual(0, 7)) this.castle = Castle.None
+            break
+        default:
+            console.error("Error: unknown castling rights (checkRookLegality)!")
+        }
+
+        return true
     }
 
     private _checkQueenLegality(from: GridCoord, to: GridCoord): boolean {
         return this._checkBishopLegality(from, to) || this._checkRookLegality(from, to)
     }
 
+    private _computeCastle(castleType: Castle, grid: Array<Array<ChessPiece | null>>) {
+        grid[0][4] = null
+        if (castleType === Castle.Long) {
+            grid[0][2] = ChessPiece.WKing
+            grid[0][0] = null
+            grid[0][3] = ChessPiece.WRook
+            if (grid == this.grid) {
+                document.getElementById("0-0")!.style.backgroundImage = 'none'
+                document.getElementById("0-4")!.style.backgroundImage = 'none'
+                document.getElementById("0-2")!.style.backgroundImage = `url(${pieceToDisplay(ChessPiece.WKing)})`
+                document.getElementById("0-3")!.style.backgroundImage = `url(${pieceToDisplay(ChessPiece.WRook)})`
+            }
+        } else {
+            grid[0][6] = ChessPiece.WKing
+            grid[0][7] = null
+            grid[0][5] = ChessPiece.WRook
+            if (grid == this.grid) {
+                document.getElementById("0-7")!.style.backgroundImage = 'none'
+                document.getElementById("0-4")!.style.backgroundImage = 'none'
+                document.getElementById("0-6")!.style.backgroundImage = `url(${pieceToDisplay(ChessPiece.WKing)})`
+                document.getElementById("0-5")!.style.backgroundImage = `url(${pieceToDisplay(ChessPiece.WRook)})`
+            }
+        }
+
+        return grid
+    }
+
+    // Need to check conditions #1, #2 and #4
+    private _castle(castleType: Castle) {
+        console.log(castleType)
+        // #1 The king cannot castle out of check
+        if (this.leavesKingInCheck(this.grid)) return false
+        // #2 The king cannot castle through check
+        const newGrid = structuredClone(this.grid)
+        newGrid[0][4] = null
+        if (castleType === Castle.Long) newGrid[0][3] = ChessPiece.WKing
+        else newGrid[0][5] = ChessPiece.WKing
+        if (this.leavesKingInCheck(newGrid)) return false
+        // #4 All squares in the path must be empty
+        if (
+            (castleType === Castle.Long && this.coordsHasPiece(new GridCoord(0, 1), new GridCoord(0, 2), new GridCoord(0, 3))) ||
+            (castleType === Castle.Short && this.coordsHasPiece(new GridCoord(0, 5), new GridCoord(0, 6)))
+        ) return false
+        // Remember, the king can't walk into check
+        if (this.leavesKingInCheck(this._computeCastle(castleType, structuredClone(this.grid)))) return false
+        this.castle = Castle.None
+        this._computeCastle(castleType, this.grid)
+        return true
+    }
+
     private _checkKingLegality(from: GridCoord, to: GridCoord): boolean {
         // Special move: castling
-        // Conditions:
-        // 1. The king cannot castle through check
-        // 2. The king cannot castle out of check
-        // 3. Both the king and the rook can'tve moved previously
-        // 4. All squares in the path must be empty
-        // Castling is done by moving king two squares horizontally in this game.
         
         const offsets = [
             [0, -1], [0, 1], [1, 0], [-1, 0],
@@ -245,13 +377,42 @@ class Board {
 
         for (const offset of offsets) {
             const coord = new GridCoord(to.row + offset[0], to.col + offset[1])
-            if (coord.isEqual(from)) return true
+            if (coord.isEqual(from)) {
+                this.castle = Castle.None
+                return true
+            }
         }
-        return false;
+
+        // The only legal move at this point is castling.
+        // Conditions:
+        // #1 The king cannot castle through check
+        // #2 The king cannot castle out of check
+        // #3 Both the king and the rook can'tve moved previously
+        // #4 All squares in the path must be empty
+        // Castling is done by moving king two squares horizontally in this game.
+
+        // Not castle or no castling rights - illegal
+        if (difference(from.col, to.col) !== 2 || difference(from.row, to.row) !== 0 || this.castle === Castle.None) {
+            return false
+        }
+
+        // Attempted castle. this.castle is NOT None here
+        // Attempted long castle
+        // Condition #1: both the king and the rook can'tve moved previously
+        if (to.col === 2) {
+            if (this.castle === Castle.Short) return false
+            if (!this._castle(Castle.Long)) return false
+        // Attempted short castle
+        } else {
+            if (this.castle === Castle.Long) return false
+            if (!this._castle(Castle.Short)) return false
+        }
+
+        return true;
     }
 
     // For player only
-    private leavesKingInCheck(from: GridCoord, to: GridCoord): boolean {
+    private leavesKingInCheck(newBoard: Array<Array<ChessPiece | null>>): boolean {
         return false;
     }
 
@@ -272,72 +433,84 @@ class Board {
         // This could probably be done via polymorphism
         // but that's for future me
         switch (piece) {
-            case ChessPiece.WPawn:
-                if (!this._checkPawnLegality(from, to)) return false
-                break
-            case ChessPiece.WKnight:
-                if (!this._checkKnightLegality(from, to)) return false
-                this.enPassant = null
-                break
-            case ChessPiece.WBishop:
-                if (!this._checkBishopLegality(from, to)) return false
-                this.enPassant = null
-                break
-            case ChessPiece.WRook:
-                if (!this._checkRookLegality(from, to)) return false
-                this.enPassant = null
-                break
-            case ChessPiece.WQueen:
-                if (!this._checkQueenLegality(from, to)) return false
-                this.enPassant = null
-                break
-            case ChessPiece.WKing:
-                if (!this._checkKingLegality(from, to)) return false
-                this.enPassant = null
-                break
-            default:
-                // Shouldn't run.
-                console.error("isLegalMove: side is black/unknown piece!")
-                return false
+        case ChessPiece.WPawn:
+            if (!this._checkPawnLegality(from, to)) return false
+            break
+        case ChessPiece.WKnight:
+            if (!this._checkKnightLegality(from, to)) return false
+            this.enPassant = null
+            break
+        case ChessPiece.WBishop:
+            if (!this._checkBishopLegality(from, to)) return false
+            this.enPassant = null
+            break
+        case ChessPiece.WRook:
+            if (!this._checkRookLegality(from, to)) return false
+            this.enPassant = null
+            break
+        case ChessPiece.WQueen:
+            if (!this._checkQueenLegality(from, to)) return false
+            this.enPassant = null
+            break
+        case ChessPiece.WKing:
+            if (!this._checkKingLegality(from, to)) return false
+            this.enPassant = null
+            break
+        default:
+            // Shouldn't run.
+            console.error("isLegalMove: side is black/unknown piece!")
+            return false
         }
 
         return true
     }
 
     move(from: GridCoord, to: GridCoord) {
+        const pieceType = this.getPiece(from)
+
         if (!this.isLegalMove(from, to)) {
             return
         }
 
-        const pieceType = this.getPiece(from)
+        nextTurn = true
+
+        // Promotion
+        if (pieceType === ChessPiece.WPawn && to.row === 7) {
+            this._promote(to)
+        } else {
+            nextTurn = true
+        }
+
         this.setPiece(from, null)
-        document.getElementById(`${from.row}-${from.col}`)!.textContent = ""
+        document.getElementById(`${from.row}-${from.col}`)!.style.backgroundImage = "none"
         this.setPiece(to, pieceType)
-        document.getElementById(`${to.row}-${to.col}`)!.textContent = pieceToDisplay(pieceType)
+        const display = pieceToDisplay(pieceType)
+        document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
+        // console.log(this.getPiece(0, 4));
+        // console.log(this.getPiece(0, 6));
     }
 }
 
+console.log("Dev version 3")
 const board = new Board()
 
 // Use pieceToDisplay instead of _chessPieceMap!
 const _chessPieceMap = new Map<ChessPiece, string>()
 
-// This will eventually be mapped to image paths
-// instead of characters "when the time is ripe"
 function pieceToDisplay(piece: ChessPiece | null) {
     if (!_chessPieceMap.size) {
-        _chessPieceMap.set(ChessPiece.WPawn, "WP")
-        _chessPieceMap.set(ChessPiece.WBishop, "WB")
-        _chessPieceMap.set(ChessPiece.WRook, "WR")
-        _chessPieceMap.set(ChessPiece.WQueen, "WQ")
-        _chessPieceMap.set(ChessPiece.WKnight, "WN")
-        _chessPieceMap.set(ChessPiece.WKing, "WK")
-        _chessPieceMap.set(ChessPiece.BPawn, "BP")
-        _chessPieceMap.set(ChessPiece.BKnight, "BN")
-        _chessPieceMap.set(ChessPiece.BBishop, "BB")
-        _chessPieceMap.set(ChessPiece.BRook, "BR")
-        _chessPieceMap.set(ChessPiece.BQueen, "BQ")
-        _chessPieceMap.set(ChessPiece.BKing, "BK")
+        _chessPieceMap.set(ChessPiece.WPawn, "../assets/white-pawn.png")
+        _chessPieceMap.set(ChessPiece.WBishop, "../assets/white-bishop.png")
+        _chessPieceMap.set(ChessPiece.WRook, "../assets/white-rook.png")
+        _chessPieceMap.set(ChessPiece.WQueen, "../assets/white-queen.png")
+        _chessPieceMap.set(ChessPiece.WKnight, "../assets/white-knight.png")
+        _chessPieceMap.set(ChessPiece.WKing, "../assets/white-king.png")
+        _chessPieceMap.set(ChessPiece.BPawn, "../assets/black-pawn.png")
+        _chessPieceMap.set(ChessPiece.BKnight, "../assets/black-knight.png")
+        _chessPieceMap.set(ChessPiece.BBishop, "../assets/black-bishop.png")
+        _chessPieceMap.set(ChessPiece.BRook, "../assets/black-rook.png")
+        _chessPieceMap.set(ChessPiece.BQueen, "../assets/black-queen.png")
+        _chessPieceMap.set(ChessPiece.BKing, "../assets/black-king.png")
     }
     if (piece === null) {
         return ""
@@ -360,7 +533,8 @@ for (let i = 7; i > -1; i--) {
     for (let j = 0; j < 8; j++) {
         const square = document.createElement("button")
         square.id = `${i}-${j}`
-        square.textContent = pieceToDisplay(board.getPiece(i, j))
+        const display = pieceToDisplay(board.getPiece(i,j))
+        square.style.backgroundImage = display === '' ? 'none' : `url(${display})`
         square.classList.add("chess-button")
         square.classList.add(black ? "black-tile" : "white-tile")
         black = !black
@@ -371,7 +545,7 @@ for (let i = 7; i > -1; i--) {
 let selectedElement: GridCoord | undefined
 
 domBoard.addEventListener('click', (event) => {
-    if (event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
+    if (nextTurn && event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
         const target = event.target
         const id = target.id
         const piece = board.getPiece(id)

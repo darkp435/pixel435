@@ -1,5 +1,24 @@
 // Originally written in C by Frank, modified to strip out graphics to be used as an engine.
 // This does mean that parts of the file that utilises C++ features are written by darkp435.
+
+// WARNING: THIS CODEBASE WAS ORIGINALLY WRITTEN IN C89. ONLY MAKE NECESSARY CHANGES. DO NOT
+// TRY TO REFACTOR WHAT SEEMS LIKE SPAGHETTI CODE AS IT MAY BREAK THINGS. EFFORTS ARE FUTILE.
+// HIGHLY HAZARDOUS. ENTER WITH CAUTION.
+// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠟⠛⠛⠛⠛⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+// ⣿⣿⣿⣿⣿⣿⣿⠟⢋⣡⣤⣶⣶⣶⣿⣷⣶⣶⣦⣤⣈⡙⠿⣿⣿⣿⣿⣿⣿⣿
+// ⣿⣿⣿⣿⡿⠋⣠⡾⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠻⢶⣌⠻⣿⣿⣿⣿⣿
+// ⣿⣿⣿⠟⣠⡾⠋⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⠋⠀⠀⠀⠙⣷⡌⢻⣿⣿⣿
+// ⣿⣿⠏⣰⡟⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠈⢿⡄⢻⣿⣿
+// ⣿⡏⢠⣿⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠈⣷⠀⢿⣿
+// ⣿⠁⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⣠⠿⠛⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡇⢸⣿
+// ⣿⠀⣿⣧⣤⣤⣤⣤⣤⣤⣤⣼⡇⠀⠀⠀⠈⣿⣤⣤⣤⣤⣤⣤⣤⣤⣼⡇⢸⣿
+// ⣿⡄⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣀⣀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⢸⣿
+// ⣿⣇⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠉⠉⠉⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⣾⣿
+// ⣿⣿⣆⠸⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⠃⣼⣿⣿
+// ⣿⣿⣿⣧⡘⢿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠟⢁⣾⣿⣿⣿
+// ⣿⣿⣿⣿⣷⣄⡙⠿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣿⣿⠟⢁⣴⣿⣿⣿⣿⣿
+// ⣿⣿⣿⣿⣿⣿⣿⣶⣤⣉⠙⠛⠿⠶⠶⠶⠾⠟⠛⠋⣉⣤⣾⣿⣿⣿⣿⣿⣿⣿
+// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +80,7 @@
 #define BITBOARD_QUERY(HIGH, LOW, BIT) (((BIT > 31) ? (HIGH >> (BIT & 31)) : (LOW >> (BIT & 31))) & 1)
 #define ARRAY_SWAP(ARRAY, INDEX_A, INDEX_B, TEMP) do {TEMP = ARRAY[INDEX_A]; ARRAY[INDEX_A] = ARRAY[INDEX_B]; ARRAY[INDEX_B] = TEMP;} while(0)
 #define ZOBRIST_PIECE_FIX(PIECE) (PIECE > 0 ? PIECE - 1 : -PIECE - 1 + 6)
+// I am NOT fixing this dumpster fire - darkp435
 #define MOVE_SCORE(MOVE, PIECE, CAPTURED, DEST, HISTORY, PRIORITY, K1, K2, K3) ( \
     (MOVE == PRIORITY) ? 30000 : \
     ( \
@@ -69,7 +89,7 @@
         ) + \
         (((MOVE >> 14) == 1) ? PROMOTION_VALUES[(MOVE >> 12) & 3] : 0) \
     ) \
-) // Todo: Fix this dumpster fire
+)
 #define HISTORY_MAX 8192
 #define HISTORY_MAX_SHIFT 13
 #define HISTORY_DECAY_SHIFT 14
@@ -234,14 +254,15 @@ size_t lookup(const Entry table[], std::string_view member) {
  * Returns the offset of a class member.
  * @param class_name The name of the C struct the member is queried from. It can either be Undo, Metrics, or ExtraGameInfo.
  * @param member The member that you wish to get the offset of.
- * @returns Offset, in bytes, of the member.
+ * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
  */
 extern "C" size_t get_offset(const char* class_name, const char* member) {
-    if (class_name == "Undo") {
+    std::string_view _class_name = class_name;
+    if (_class_name == "Undo") {
         return lookup(UndoOffsets, member);
-    } else if (class_name == "Metrics") {
+    } else if (_class_name == "Metrics") {
         return lookup(MetricsOffsets, member);
-    } else if (class_name == "ExtraGameInfo") {
+    } else if (_class_name == "ExtraGameInfo") {
         return lookup(EGIOffsets, member);
     } else {
         return static_cast<size_t>(-1);
