@@ -1531,76 +1531,6 @@ int disambiguation_scan(Piece board[], Square origin, Square dest, Piece scan_pi
     return return_val;
 }
 
-// This will break stuff if the move is illegal
-void to_alg_notation(char dst[], Piece board[], ExtraGameInfo* game_data, Move* move, int check_detection) {
-    Undo u;
-
-    Square origin = DECODE_FROM(*move);
-    Square dest = DECODE_DEST(*move);
-
-    Move moves[256];
-
-    Piece piece_type = abs(board[origin]);
-
-    int disambiguation = disambiguation_scan(board, origin, dest, board[origin]);
-
-    if (piece_type == EMPTY) {
-        *dst = 0;
-        return;
-    }
-
-    switch (*move >> 12) {
-        case FLAG_CASTLE_L:
-            *(dst++) = 'O';
-            *(dst++) = '-';
-            *(dst++) = 'O';
-            *(dst++) = '-';
-            *(dst++) = 'O';
-            break;
-        case FLAG_CASTLE_S:
-            *(dst++) = 'O';
-            *(dst++) = '-';
-            *(dst++) = 'O';
-            break;
-        default:
-            if (piece_type > 1) {
-                *(dst++) = piece_names[piece_type];
-            }
-
-            if (disambiguation & 1) *(dst++) = files[origin & 7];
-            if (disambiguation & 2) *(dst++) = ranks[origin >> 4];
-
-            if (board[dest] || (*move >> 12 == FLAG_EP)) {
-                if (piece_type == WP) *(dst++) = files[origin & 7];
-                *(dst++) = 'x';
-            }
-
-            *(dst++) = files[dest & 7];
-            *(dst++) = ranks[dest >> 4];
-
-            if ((*move >> 14) == 1) {
-                *(dst++) = '=';
-                *(dst++) = piece_names[(*move >> 12) - 2];
-            }
-    }
-
-    if (check_detection) {
-        make_move(board, game_data, move, &u, 0);
-
-        if (is_in_check(board, game_data->side_to_move, (game_data->side_to_move == WHITE) ? game_data->white_king_sq : game_data->black_king_sq)) {
-            if (pseudo_legal_moves(board, game_data, moves, 0, NULL, NULL, 0, 1)) { // todo: mates are not transcribed correctly
-                *(dst++) = '+';
-            } else {
-                *(dst++) = '#';
-            }
-        }
-
-        unmake_move(board, game_data, &u);
-    }
-
-    *dst = 0;
-}
-
 short absolute_eval_mg(Piece board[], ExtraGameInfo* game_data) {
     int i, piece;
     short score = 0;
@@ -1864,7 +1794,7 @@ short minimax(
     return max;
 }
 
-extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move, char history[][16]) {
+extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
     int iter_depth, i;
     short engine_eval;
 
@@ -1884,10 +1814,6 @@ extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move,
     }
 
     if (pv[0]) {
-        memmove(history[0], history[1], 3 * 16);
-
-        to_alg_notation(history[3], board, game_data, &pv[0], 1);
-
         make_move(board, game_data, &pv[0], last_move, 1);
     }
 
