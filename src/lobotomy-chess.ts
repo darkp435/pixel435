@@ -25,6 +25,22 @@
 //   code have to be so bad??? Like, is there no other
 //   way to write code without 4 levels of nested
 //   if statements?
+// 14/07
+// - Wrote the logic for bishop, rook, pawn and queen
+//   moves.
+// 15/07
+// - Fixed the logic for the aforementioned pieces
+//   and add king moves. Man I hate off-by-one errors.
+// - Switched to WebAssembly instead of manual
+//   transpilation because I realised it's faster
+//   and less painful.
+// - Add actual icons for the chess pieces.
+// - Wrote some CSS to make the website look good.
+// 16/07
+// - Added promotion
+// - Added castling. There was a bug that led to
+//   the king disappearing and it took about 30
+//   minutes and all my sanity to fix.
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
@@ -208,12 +224,16 @@ class Board {
         return false
     }
 
-    // Flattens the chess board
+    // Transforms the chessboard to 0x88 encoding
     chessBoardToCoolerChessBoard() {
         const flattened = []
         for (const row of this.grid) {
             for (const sq of row) {
-                flattened.push(sq)
+                if (sq === null) {
+                    flattened.push(0)
+                } else {
+                    flattened.push(sq)
+                }
             }
         }
 
@@ -489,6 +509,17 @@ class Board {
         // console.log(this.getPiece(0, 4));
         // console.log(this.getPiece(0, 6));
     }
+
+    // For the engine
+    private gridCoordToSquare(coord: GridCoord) {
+
+    }
+
+    getRequiredBotInfo() {
+        const boardBytes = new Int8Array(this.chessBoardToCoolerChessBoard())
+        const boardPtr = Module._malloc(128)
+        Module.HEAP8.set(boardBytes, boardPtr)
+    }
 }
 
 console.log("Dev version 3")
@@ -499,17 +530,29 @@ const _chessPieceMap = new Map<ChessPiece, string>()
 
 function pieceToDisplay(piece: ChessPiece | null) {
     if (!_chessPieceMap.size) {
+        // Should be an image of a black pawn on a chessboard
         _chessPieceMap.set(ChessPiece.WPawn, "../assets/white-pawn.png")
+        // Should be an image of a Scottish castle
         _chessPieceMap.set(ChessPiece.WBishop, "../assets/white-bishop.png")
+        // Should be a Microsoft Paint drawn art that remotely resembles a bishop
         _chessPieceMap.set(ChessPiece.WRook, "../assets/white-rook.png")
+        // Should be an image of Cassie, an NPC from the Roblox game Block Tales
         _chessPieceMap.set(ChessPiece.WQueen, "../assets/white-queen.png")
+        // Should be an image of a white horse
         _chessPieceMap.set(ChessPiece.WKnight, "../assets/white-knight.png")
+        // Should be an image of Aragorn, a character from Lord of the Rings
         _chessPieceMap.set(ChessPiece.WKing, "../assets/white-king.png")
+        // Should be an image of a black pawn on a chessboard
         _chessPieceMap.set(ChessPiece.BPawn, "../assets/black-pawn.png")
+        // Should be an image of a brown horse
         _chessPieceMap.set(ChessPiece.BKnight, "../assets/black-knight.png")
+        // Should be the inverted image of the aforementioned white bishop
         _chessPieceMap.set(ChessPiece.BBishop, "../assets/black-bishop.png")
+        // Should be the inverted image of the aforementioned white rook
         _chessPieceMap.set(ChessPiece.BRook, "../assets/black-rook.png")
+        // Should be the inverted, and quality-reduced image of the aforementioned white queen
         _chessPieceMap.set(ChessPiece.BQueen, "../assets/black-queen.png")
+        // Should be the inverted image of the aforementioned white king
         _chessPieceMap.set(ChessPiece.BKing, "../assets/black-king.png")
     }
     if (piece === null) {
