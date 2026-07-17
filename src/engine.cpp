@@ -1,5 +1,17 @@
 // Originally written in C by Frank, modified to strip out graphics to be used as an engine.
 // This does mean that parts of the file that utilises C++ features are written by darkp435.
+//
+// Notes:
+// - This program was originally written in C89 intended to run on a CASIO calculator, by
+//   Frank. If you notice odd-looking code, it is probably because of this. Refactoring it
+//   doesn't really yield any practical benefits and would be a waste a effort, so it's
+//   unadvised to do so.
+// - This is now intended to be ran as WebAssembly. Do not use any OS-dependent APIs. Setting
+//   Intellisense mode to clang-x64 is highly recommended for development. See
+//   BUILD-INSTRUCTIONS.md at the root directory of this project for compilation instructions.
+// - The original program featured a halfmove clock, but it has been removed in this program
+//   due to the extra hassle and not yielding much benefit.
+// - The ELO of this chess engine is approximately 1800, though it has not been benchmarked.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,7 +113,6 @@ constexpr char piece_names[] = " PNBRQK";
 typedef struct {
     unsigned char castling; // KQkq 1 = can 0 = can't
     Square ep_square; // 64 if there is no en passant, otherwise square of the vul pawn
-    char halfmove_clock; // If it reaches 100, then draw by 50 move rule
     char side_to_move; // 1 or -1
     Square white_king_sq;
     Square black_king_sq;
@@ -109,8 +120,6 @@ typedef struct {
     unsigned long black_pawn_struct;
     short white_pawn_score;
     short black_pawn_score;
-    char white_king_safety;
-    char black_king_safety;
     short phase; // Represents weight of the endgame modifier, starts at 0 and goes to 256
     short mg_eval;
     short eg_modifier;
@@ -130,8 +139,6 @@ typedef struct {
     unsigned long black_pawn_struct;
     short white_pawn_score;
     short black_pawn_score;
-    char white_king_safety;
-    char black_king_safety;
     short phase;
     short mg_eval;
     short eg_modifier;
@@ -144,55 +151,30 @@ typedef struct {
 // than the person who wrote this chess engine. It contains the helper function
 // get_offset to return necessary padding for the TS/JS side of WebAssembly.
 
+// The real ExtraGameInfo struct contains a bunch of stuff that can be evaluated
+// by the engine() function, and exposing it would be unnecessary and very annoying
+// for the TS side, so we instead expect this to be passed.
+struct IExtraGameInfo {
+    unsigned char castling;
+    unsigned char ep_square;
+    unsigned char white_king_sq;
+    unsigned char black_king_sq;
+};
+
 #define UNDO_OFFSETOF(x) offsetof(Undo, x)
-#define EGI_OFFSETOF(x) offsetof(ExtraGameInfo, x)
+#define EGI_OFFSETOF(x) offsetof(IExtraGameInfo, x)
 
 struct Entry {
     std::string_view name;
     size_t bytes;
 };
 
-constexpr Entry UndoOffsets[] = {
-    {"TOTAL_SIZE", sizeof(Undo)},
-    {"move", UNDO_OFFSETOF(move)},
-    {"captured", UNDO_OFFSETOF(captured)},
-    {"castling", UNDO_OFFSETOF(castling)},
-    {"ep_square", UNDO_OFFSETOF(ep_square)},
-    {"halfmove_clock", UNDO_OFFSETOF(halfmove_clock)},
-    {"side_to_move", UNDO_OFFSETOF(side_to_move)},
-    {"black_king_sq", UNDO_OFFSETOF(black_king_sq)},
-    {"white_king_sq", UNDO_OFFSETOF(white_king_sq)},
-    {"black_pawn_struct", UNDO_OFFSETOF(black_pawn_struct)},
-    {"white_pawn_struct", UNDO_OFFSETOF(white_pawn_struct)},
-    {"black_pawn_score", UNDO_OFFSETOF(black_pawn_score)},
-    {"white_pawn_score", UNDO_OFFSETOF(white_pawn_score)},
-    {"white_king_safety", UNDO_OFFSETOF(white_king_safety)},
-    {"black_king_safety", UNDO_OFFSETOF(black_king_safety)},
-    {"phase", UNDO_OFFSETOF(phase)},
-    {"mg_eval", UNDO_OFFSETOF(mg_eval)},
-    {"eg_modifier", UNDO_OFFSETOF(eg_modifier)},
-    {"hash", UNDO_OFFSETOF(hash)},
-    {"_null", 0}
-};
-
 constexpr Entry EGIOffsets[] = {
     {"TOTAL_SIZE", sizeof(ExtraGameInfo)},
     {"castling", EGI_OFFSETOF(castling)},
     {"ep_square", EGI_OFFSETOF(ep_square)},
-    {"halfmove_clock", EGI_OFFSETOF(halfmove_clock)},
-    {"side_to_move", EGI_OFFSETOF(side_to_move)},
     {"black_king_sq", EGI_OFFSETOF(black_king_sq)},
     {"white_king_sq", EGI_OFFSETOF(white_king_sq)},
-    {"black_pawn_struct", EGI_OFFSETOF(black_pawn_struct)},
-    {"white_pawn_struct", EGI_OFFSETOF(white_pawn_struct)},
-    {"black_pawn_score", EGI_OFFSETOF(black_pawn_score)},
-    {"white_pawn_score", EGI_OFFSETOF(white_pawn_score)},
-    {"white_king_safety", EGI_OFFSETOF(white_king_safety)},
-    {"black_king_safety", EGI_OFFSETOF(black_king_safety)},
-    {"phase", EGI_OFFSETOF(phase)},
-    {"mg_eval", EGI_OFFSETOF(mg_eval)},
-    {"eg_modifier", EGI_OFFSETOF(eg_modifier)},
-    {"hash", EGI_OFFSETOF(hash)},
     {"_null", 0}
 };
 
@@ -213,15 +195,8 @@ size_t lookup(const Entry table[], std::string_view member) {
  * @param member The member that you wish to get the offset of.
  * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
  */
-extern "C" size_t get_offset(const char* class_name, const char* member) {
-    std::string_view _class_name = class_name;
-    if (_class_name == "Undo") {
-        return lookup(UndoOffsets, member);
-    } else if (_class_name == "ExtraGameInfo") {
-        return lookup(EGIOffsets, member);
-    } else {
-        return static_cast<size_t>(-1);
-    }
+extern "C" size_t get_offset(const char* member) {
+    return lookup(EGIOffsets, member);
 }
 
 // Back to C89 we go, lads!
@@ -442,10 +417,6 @@ void compute_pawn_score(Piece board[], char side, unsigned long* my_pawn_structu
     if (!(*opp_pawn_structure & 0x00003F)) *pawn_score += PASSED_REWARD * (*my_pawn_structure & 7);
 }
 
-void compute_king_safety(Piece board[], ExtraGameInfo* game_data, char side, Square king_sq, char* score) {
-    *score = 0;
-}
-
 void compute_piece_hashes(Piece board[], ExtraGameInfo* game_data) {
     int i;
     game_data->phase = 256u;
@@ -571,7 +542,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     undo->captured = board[dest];
     undo->castling = game_data->castling;
     undo->ep_square = game_data->ep_square;
-    undo->halfmove_clock = game_data->halfmove_clock;
     undo->side_to_move = game_data->side_to_move;
     undo->black_king_sq = game_data->black_king_sq;
     undo->white_king_sq = game_data->white_king_sq;
@@ -579,8 +549,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     undo->white_pawn_struct = game_data->white_pawn_struct;
     undo->black_pawn_score = game_data->black_pawn_score;
     undo->white_pawn_score = game_data->white_pawn_score;
-    undo->black_king_safety = game_data->black_king_safety;
-    undo->white_king_safety = game_data->white_king_safety;
     undo->phase = game_data->phase;
     undo->mg_eval = game_data->mg_eval;
     undo->eg_modifier = game_data->eg_modifier;
@@ -605,9 +573,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
                 game_data->castling &= ~1U; // Black Q-side
             else if (origin == 0x07) // H8
                 game_data->castling &= ~2U; // Black K-side
-            break;
-        case WP:
-            game_data->halfmove_clock = -1;
             break;
     }
 
@@ -706,7 +671,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
 
             // If capture:
             if (undo->captured) {
-                game_data->halfmove_clock = -1;
                 if (update_eval) {
                     // Add victim pst (add since taking away from opponent = adding to self)
                     mg_delta += mg_table_atlas[abs(undo->captured)][side_is_white ? TO_6BIT_C(dest) : TO_6BIT(dest)]; 
@@ -801,11 +765,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
         pawn_struct_updated = 1;
     }
 
-    if (pawn_struct_updated || abs(board[dest]) == WP || abs(board[dest]) == WK) {
-        compute_king_safety(board, game_data, WHITE, game_data->white_king_sq, &game_data->white_king_safety);
-        compute_king_safety(board, game_data, BLACK, game_data->black_king_sq, &game_data->black_king_safety);
-    } 
-
     // set the ep flag if a pawn moved forward 2 squares
     if (((*move) >> 12) == FLAG_DOUBLE_STEP) {
         game_data->ep_square = dest;
@@ -822,8 +781,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     game_data->side_to_move = -(game_data->side_to_move);
 
     game_data->hash ^= ZOBRIST_SIDE;
-
-    game_data->halfmove_clock++;
 }
 
 void unmake_move(Piece board[], ExtraGameInfo* game_data, Undo* undo) {
@@ -858,22 +815,19 @@ void unmake_move(Piece board[], ExtraGameInfo* game_data, Undo* undo) {
     game_data->castling = undo->castling;
     game_data->ep_square = undo->ep_square;
     game_data->side_to_move = undo->side_to_move;
-    game_data->halfmove_clock = undo->halfmove_clock;
     game_data->white_king_sq = undo->white_king_sq;
     game_data->black_king_sq = undo->black_king_sq;
     game_data->black_pawn_struct = undo->black_pawn_struct;
     game_data->white_pawn_struct = undo->white_pawn_struct;
     game_data->black_pawn_score = undo->black_pawn_score;
     game_data->white_pawn_score = undo->white_pawn_score;
-    game_data->black_king_safety = undo->black_king_safety;
-    game_data->white_king_safety = undo->white_king_safety;
     game_data->phase = undo->phase;
     game_data->mg_eval = undo->mg_eval;
     game_data->eg_modifier = undo->eg_modifier;
     game_data->hash = undo->hash;
 }
 
-int is_in_check(Piece board[], char side, Square king_sq) {
+extern "C" int is_in_check(Piece board[], char side, Square king_sq) {
     int i;
     Square sq = 0x80;
 
@@ -1017,7 +971,6 @@ int check_game_over(Piece board[], ExtraGameInfo* game_data, int moves_count, in
         }
     }
     if ((game_data->phase >= PHASE_MAXIMUM - phase_weight[WN]) && !(game_data->white_pawn_struct | game_data->black_pawn_struct)) return 2; // Insuf material
-    if (game_data->halfmove_clock == 100) return 2; // 50 move rule
     return 0;
 }
 
@@ -1613,10 +1566,7 @@ short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, 
 }
 
 const Move problematic_variation[] = {
-    0,
-    0,
-    0,
-    0,
+    0, 0, 0, 0,
     8 * 4096 + 31 * 64 + 15,
 };
 
@@ -1770,6 +1720,26 @@ short minimax(
     return max;
 }
 
+void init_eval(Piece board[], ExtraGameInfo* game_data) {
+    // Add: Mobility bonuses, king safety bonuses, endgame criteria, open file bonuses, pawn structure bonuses
+    int i, piece;
+    short piece_allegiance;
+    game_data->mg_eval = 0;
+    game_data->eg_modifier = 0;
+    for (i = 0; i < 128; i++) {
+        if (i & 0x88) {
+            i += 7;
+            continue;
+        }
+        if (!board[i]) continue;
+        piece = abs(board[i]);
+        piece_allegiance = SIGN(board[i]);
+        game_data->mg_eval += piece_allegiance * piece_values[piece];
+        game_data->mg_eval += piece_allegiance * mg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
+        game_data->eg_modifier += piece_allegiance * eg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
+    }
+}
+
 void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
     int iter_depth, i;
     short engine_eval;
@@ -1797,7 +1767,7 @@ void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
 }
 
 // Translates TS version of castling into one compatible for chess engine.
-void _translate_castling(unsigned char& castling) {
+unsigned char _translate_castling(unsigned char castling) {
     unsigned char new_rights = castling;
     constexpr int WHITE_KINGSIDE = (1 << 3);
     constexpr int WHITE_QUEENSIDE = (1 << 2);
@@ -1820,31 +1790,49 @@ void _translate_castling(unsigned char& castling) {
         break;
     }
 
-    castling = new_rights;
+    return new_rights;
 }
 
 // Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
-void _translate_square(unsigned char& square) {
+unsigned char _translate_square(unsigned char square) {
     uint8_t row = square & 0xf;
     uint8_t col = square >> 4;
-    square = col;
-    square += ((7 - row) * 0x10);
+    unsigned char res = col;
+    res += ((7 - row) * 0x10);
+    return TO_6BIT(res);
 }
 
+int init = false;
+
 // Translates some data into what the actual engine uses; moves, for example.
-extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
-    // game_data->castling
-    _translate_castling(game_data->castling);
-    // game_data->ep_square
-    if (!game_data->ep_square) game_data->ep_square = 64;
-    else _translate_square(game_data->ep_square);
-    // game_data->halfmove_clock
-    game_data->halfmove_clock++;
-    // game_data->side_to_move
-    game_data->side_to_move = -1;
-    // game_data->white_king_sq
-    _translate_square(game_data->white_king_sq);
-    // game_data->black_king_sq
-    _translate_square(game_data->black_king_sq);
-    _engine(board, game_data, last_move);
+extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
+    static ExtraGameInfo egi;
+    // castling
+    egi.castling = _translate_castling(game_data->castling);
+    // ep_square
+    if (!game_data->ep_square) egi.ep_square = 64;
+    else egi.ep_square = _translate_square(game_data->ep_square);
+    // side_to_move
+    egi.side_to_move = -1;
+    // white_king_sq
+    egi.white_king_sq = _translate_square(game_data->white_king_sq);
+    // black_king_sq
+    egi.black_king_sq = _translate_square(game_data->black_king_sq);
+    if (!init) {
+        // white_pawn_struct
+        egi.white_pawn_struct = 0;
+        // black_pawn_struct
+        egi.black_pawn_struct = 0;
+        // white_pawn_score
+        egi.white_pawn_score = 0;
+        // black_pawn_score
+        egi.black_pawn_score = 0;
+        // phase
+        egi.phase = 0;
+        // mg_eval and eg_modifier
+        init_eval(board, &egi);
+    }
+    init = true;
+    static Undo undo;
+    _engine(board, &egi, &undo);
 }

@@ -435,11 +435,6 @@ class Board {
         return true;
     }
 
-    // For player only
-    private leavesKingInCheck(newBoard: Array<Array<ChessPiece | null>>): boolean {
-        return false;
-    }
-
     private isLegalMove(from: GridCoord, to: GridCoord): boolean {
         if (!this.isTurn || 
             from.isEqual(to) || 
@@ -516,18 +511,21 @@ class Board {
 
     // For the engine
     private gridCoordToSquare(coord: GridCoord) {
-
+        return compact(coord.row, coord.col)
     }
 
     getRequiredBotInfo() {
         const boardBytes = new Int8Array(this.chessBoardToCoolerChessBoard())
         const boardPtr = Module._malloc(128)
         Module.HEAP8.set(boardBytes, boardPtr)
-        const egi = cString("ExtraGameInfo")
         const total = cString("TOTAL_SIZE")
-        const undo = cString("Undo")
-        const egiPtr = Module._malloc(Module._get_offset(egi, total))
-        const undoPtr = Module._malloc(Module._get_offset(undo, total))
+        const egiPtr = Module._malloc(Module._get_offset(total))
+        const castlingOffset = Module._get_offset(cString("castling"))
+        const epSquareOffset = Module._get_offset(cString("ep_square"))
+        const whiteKingSqOffset = Module._get_offset(cString("white_king_sq"))
+        const blackKingSqOffset = Module._get_offset(cString("black_king_sq"))
+        Module.setValue(egiPtr + castlingOffset, this.castle, "u8")
+        
     }
 }
 
