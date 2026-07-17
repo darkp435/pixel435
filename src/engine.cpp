@@ -1802,6 +1802,38 @@ unsigned char _translate_square(unsigned char square) {
     return TO_6BIT(res);
 }
 
+// constexpr Square sq_tbl[128] = {    
+//     0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0,
+//     8,  9,  10, 11, 12, 13, 14, 15, 0,  0,  0,  0,  0,  0,  0,  0,
+//     16, 17, 18, 19, 20, 21, 22, 23, 0,  0,  0,  0,  0,  0,  0,  0,
+//     24, 25, 26, 27, 28, 29, 30, 31, 0,  0,  0,  0,  0,  0,  0,  0,
+//     32, 33, 34, 35, 36, 37, 38, 39, 0,  0,  0,  0,  0,  0,  0,  0,
+//     40, 41, 42, 43, 44, 45, 46, 47, 0,  0,  0,  0,  0,  0,  0,  0,
+//     48, 49, 50, 51, 52, 53, 54, 55, 0,  0,  0,  0,  0,  0,  0,  0,
+//     56, 57, 58, 59, 60, 61, 62, 63, 0,  0,  0,  0,  0,  0,  0,  0
+// };
+
+// Packs row and col into one integer
+consteval unsigned char _pack(unsigned char row, unsigned char col) {
+    return (row << 4) | col;
+}
+
+constexpr unsigned char decode_table[64] = {
+    _pack(7,0), _pack(7, 1), _pack(7, 2), _pack(7, 3), _pack(7, 4), _pack(7, 5), _pack(7, 6), _pack(7, 7),
+    _pack(6,0), _pack(6, 1), _pack(6, 2), _pack(6, 3), _pack(6, 4), _pack(6, 5), _pack(6, 6), _pack(6, 7),
+    _pack(5,0), _pack(5, 1), _pack(5, 2), _pack(5, 3), _pack(5, 4), _pack(5, 5), _pack(5, 6), _pack(5, 7),
+    _pack(4,0), _pack(4, 1), _pack(4, 2), _pack(4, 3), _pack(4, 4), _pack(4, 5), _pack(4, 6), _pack(4, 7),
+    _pack(3,0), _pack(3, 1), _pack(3, 2), _pack(3, 3), _pack(3, 4), _pack(3, 5), _pack(3, 6), _pack(3, 7),
+    _pack(2,0), _pack(2, 1), _pack(2, 2), _pack(2, 3), _pack(2, 4), _pack(2, 5), _pack(2, 6), _pack(2, 7),
+    _pack(1,0), _pack(1, 1), _pack(1, 2), _pack(1, 3), _pack(1, 4), _pack(1, 5), _pack(1, 6), _pack(1, 7),
+    _pack(0,0), _pack(0, 1), _pack(0, 2), _pack(0, 3), _pack(0, 4), _pack(0, 5), _pack(0, 6), _pack(0, 7)
+};
+
+// Opposite of translate_square: decodes a square
+// sq_tbl[0] = a8
+// sq_tbl[7] = h8
+#define DECODE(x) decode_table[x]
+
 int init = false;
 
 // Translates some data into what the actual engine uses; moves, for example.
@@ -1835,4 +1867,6 @@ extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
     init = true;
     static Undo undo;
     _engine(board, &egi, &undo);
+    // Decode ep_square
+    game_data->ep_square = DECODE(egi.ep_square);
 }

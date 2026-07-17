@@ -46,6 +46,7 @@ const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
 const Module = await createModule()
 let nextTurn = true
+let botsTurn = false
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -514,8 +515,20 @@ class Board {
         return compact(coord.row, coord.col)
     }
 
+    // Used for white and black king for getRequiredBotInfo
+    private search(piece: ChessPiece) {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (this.getPiece(row, col) === piece) return new GridCoord(row, col)
+            }
+        }
+
+        // Shouldn't happen
+        return new GridCoord(-1, -1)
+    }
+
     getRequiredBotInfo() {
-        const boardBytes = new Int8Array(this.chessBoardToCoolerChessBoard())
+        const boardBytes = this.chessBoardToCoolerChessBoard()
         const boardPtr = Module._malloc(128)
         Module.HEAP8.set(boardBytes, boardPtr)
         const total = cString("TOTAL_SIZE")
@@ -525,7 +538,11 @@ class Board {
         const whiteKingSqOffset = Module._get_offset(cString("white_king_sq"))
         const blackKingSqOffset = Module._get_offset(cString("black_king_sq"))
         Module.setValue(egiPtr + castlingOffset, this.castle, "u8")
-        
+        if (this.enPassant === null) Module.setValue(egiPtr + epSquareOffset, 0, "u8")
+        else Module.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "u8")
+        Module.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "u8")
+        Module.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "u8")
+        return [boardPtr, egiPtr]
     }
 }
 
@@ -606,7 +623,7 @@ for (let i = 7; i > -1; i--) {
 let selectedElement: GridCoord | undefined
 
 domBoard.addEventListener('click', (event) => {
-    if (nextTurn && event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
+    if (nextTurn && !botsTurn && event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
         const target = event.target
         const id = target.id
         const piece = board.getPiece(id)
