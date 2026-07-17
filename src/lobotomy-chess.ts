@@ -78,11 +78,12 @@ enum ChessPiece {
     BKing = -6
 }
 
+// To be compatible with engine.cpp
 enum Castle {
-    Long,
-    Short,
-    None,
-    Both
+    Long = 0,
+    Short = 1,
+    None = 2,
+    Both = 3
 }
 
 // Chess grid is 8x8 (obviously)
@@ -227,17 +228,19 @@ class Board {
     // Transforms the chessboard to 0x88 encoding
     chessBoardToCoolerChessBoard() {
         const flattened = []
-        for (const row of this.grid) {
-            for (const sq of row) {
-                if (sq === null) {
-                    flattened.push(0)
-                } else {
-                    flattened.push(sq)
-                }
+        // Init the array with all 0s
+        for (let _ = 0; _ < 128; _++) {
+            flattened.push(0)
+        }
+        for (let rank = 0; rank < 8; rank++) {
+            for (let file = 0; file < 8; file++) {
+                const index88 = rank * 16 + file
+                // Number is needed so that nulls get transformed into 0s
+                flattened[index88] = Number(this.grid[rank][file])
             }
         }
 
-        return flattened
+        return new Int8Array(flattened)
     }
 
     private __isPieceInBetween(stop: number, condition: (i: number) => boolean) {
@@ -387,6 +390,7 @@ class Board {
         return true
     }
 
+    //! FIXME: the king can at the moment castle with an enemy rook!
     private _checkKingLegality(from: GridCoord, to: GridCoord): boolean {
         // Special move: castling
         
@@ -519,7 +523,19 @@ class Board {
         const boardBytes = new Int8Array(this.chessBoardToCoolerChessBoard())
         const boardPtr = Module._malloc(128)
         Module.HEAP8.set(boardBytes, boardPtr)
+        const egi = cString("ExtraGameInfo")
+        const total = cString("TOTAL_SIZE")
+        const undo = cString("Undo")
+        const egiPtr = Module._malloc(Module._get_offset(egi, total))
+        const undoPtr = Module._malloc(Module._get_offset(undo, total))
     }
+}
+
+function cString(str: string) {
+    const size = Module.lengthBytesUTF8(str) + 1
+    const ptr = Module._malloc(size)
+    Module.stringToUTF8(str, ptr, size)
+    return ptr
 }
 
 console.log("Dev version 3")
@@ -564,6 +580,10 @@ function pieceToDisplay(piece: ChessPiece | null) {
 function idToGridCoord(id: string) {
     const split = id.split('-')
     return new GridCoord(parseInt(split[0]), parseInt(split[1]))
+}
+
+function compact(num1: number, num2: number) {
+    return ((num1 & 0xf) << 4) | (num2 & 0xf)
 }
 
 const domBoard = document.getElementById("chess-board") as HTMLDivElement

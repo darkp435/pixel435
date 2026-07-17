@@ -1,24 +1,5 @@
 // Originally written in C by Frank, modified to strip out graphics to be used as an engine.
 // This does mean that parts of the file that utilises C++ features are written by darkp435.
-
-// WARNING: THIS CODEBASE WAS ORIGINALLY WRITTEN IN C89. ONLY MAKE NECESSARY CHANGES. DO NOT
-// TRY TO REFACTOR WHAT SEEMS LIKE SPAGHETTI CODE AS IT MAY BREAK THINGS. EFFORTS ARE FUTILE.
-// HIGHLY HAZARDOUS. ENTER WITH CAUTION.
-// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠟⠛⠛⠛⠛⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-// ⣿⣿⣿⣿⣿⣿⣿⠟⢋⣡⣤⣶⣶⣶⣿⣷⣶⣶⣦⣤⣈⡙⠿⣿⣿⣿⣿⣿⣿⣿
-// ⣿⣿⣿⣿⡿⠋⣠⡾⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠻⢶⣌⠻⣿⣿⣿⣿⣿
-// ⣿⣿⣿⠟⣠⡾⠋⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⠋⠀⠀⠀⠙⣷⡌⢻⣿⣿⣿
-// ⣿⣿⠏⣰⡟⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠈⢿⡄⢻⣿⣿
-// ⣿⡏⢠⣿⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠈⣷⠀⢿⣿
-// ⣿⠁⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⣠⠿⠛⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡇⢸⣿
-// ⣿⠀⣿⣧⣤⣤⣤⣤⣤⣤⣤⣼⡇⠀⠀⠀⠈⣿⣤⣤⣤⣤⣤⣤⣤⣤⣼⡇⢸⣿
-// ⣿⡄⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣀⣀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⢸⣿
-// ⣿⣇⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠉⠉⠉⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⣾⣿
-// ⣿⣿⣆⠸⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⠃⣼⣿⣿
-// ⣿⣿⣿⣧⡘⢿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⠟⢁⣾⣿⣿⣿
-// ⣿⣿⣿⣿⣷⣄⡙⠿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣿⣿⠟⢁⣴⣿⣿⣿⣿⣿
-// ⣿⣿⣿⣿⣿⣿⣿⣶⣤⣉⠙⠛⠿⠶⠶⠶⠾⠟⠛⠋⣉⣤⣾⣿⣿⣿⣿⣿⣿⣿
-// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,7 +102,6 @@ typedef struct {
     unsigned char castling; // KQkq 1 = can 0 = can't
     Square ep_square; // 64 if there is no en passant, otherwise square of the vul pawn
     char halfmove_clock; // If it reaches 100, then draw by 50 move rule
-    unsigned short fullmove_clock; // Just for display
     char side_to_move; // 1 or -1
     Square white_king_sq;
     Square black_king_sq;
@@ -143,7 +123,6 @@ typedef struct {
     unsigned char castling;
     Square ep_square; // 0x80 if no enpassant, otherwise square of vulnerable pawn
     unsigned char halfmove_clock;
-    unsigned short fullmove_clock;
     char side_to_move;
     Square white_king_sq;
     Square black_king_sq;
@@ -174,12 +153,12 @@ struct Entry {
 };
 
 constexpr Entry UndoOffsets[] = {
+    {"TOTAL_SIZE", sizeof(Undo)},
     {"move", UNDO_OFFSETOF(move)},
     {"captured", UNDO_OFFSETOF(captured)},
     {"castling", UNDO_OFFSETOF(castling)},
     {"ep_square", UNDO_OFFSETOF(ep_square)},
     {"halfmove_clock", UNDO_OFFSETOF(halfmove_clock)},
-    {"fullmove_clock", UNDO_OFFSETOF(fullmove_clock)},
     {"side_to_move", UNDO_OFFSETOF(side_to_move)},
     {"black_king_sq", UNDO_OFFSETOF(black_king_sq)},
     {"white_king_sq", UNDO_OFFSETOF(white_king_sq)},
@@ -197,10 +176,10 @@ constexpr Entry UndoOffsets[] = {
 };
 
 constexpr Entry EGIOffsets[] = {
+    {"TOTAL_SIZE", sizeof(ExtraGameInfo)},
     {"castling", EGI_OFFSETOF(castling)},
     {"ep_square", EGI_OFFSETOF(ep_square)},
     {"halfmove_clock", EGI_OFFSETOF(halfmove_clock)},
-    {"fullmove_clock", EGI_OFFSETOF(fullmove_clock)},
     {"side_to_move", EGI_OFFSETOF(side_to_move)},
     {"black_king_sq", EGI_OFFSETOF(black_king_sq)},
     {"white_king_sq", EGI_OFFSETOF(white_king_sq)},
@@ -593,7 +572,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     undo->castling = game_data->castling;
     undo->ep_square = game_data->ep_square;
     undo->halfmove_clock = game_data->halfmove_clock;
-    undo->fullmove_clock = game_data->fullmove_clock;
     undo->side_to_move = game_data->side_to_move;
     undo->black_king_sq = game_data->black_king_sq;
     undo->white_king_sq = game_data->white_king_sq;
@@ -846,7 +824,6 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     game_data->hash ^= ZOBRIST_SIDE;
 
     game_data->halfmove_clock++;
-    if (!side_is_white) game_data->fullmove_clock++;
 }
 
 void unmake_move(Piece board[], ExtraGameInfo* game_data, Undo* undo) {
@@ -882,7 +859,6 @@ void unmake_move(Piece board[], ExtraGameInfo* game_data, Undo* undo) {
     game_data->ep_square = undo->ep_square;
     game_data->side_to_move = undo->side_to_move;
     game_data->halfmove_clock = undo->halfmove_clock;
-    game_data->fullmove_clock = undo->fullmove_clock;
     game_data->white_king_sq = undo->white_king_sq;
     game_data->black_king_sq = undo->black_king_sq;
     game_data->black_pawn_struct = undo->black_pawn_struct;
@@ -1794,7 +1770,7 @@ short minimax(
     return max;
 }
 
-extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
+void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
     int iter_depth, i;
     short engine_eval;
 
@@ -1818,4 +1794,57 @@ extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move)
     }
 
     free(tt);
+}
+
+// Translates TS version of castling into one compatible for chess engine.
+void _translate_castling(unsigned char& castling) {
+    unsigned char new_rights = castling;
+    constexpr int WHITE_KINGSIDE = (1 << 3);
+    constexpr int WHITE_QUEENSIDE = (1 << 2);
+    switch (castling) {
+    // Long
+    case 0:
+        new_rights |= (WHITE_QUEENSIDE);
+        break;
+    // Short
+    case 1:
+        new_rights |= (WHITE_KINGSIDE);
+        break;
+    // Both
+    case 3:
+        new_rights |= (WHITE_KINGSIDE);
+        new_rights |= (WHITE_KINGSIDE);
+        break;
+    // None, new rights appended
+    default:
+        break;
+    }
+
+    castling = new_rights;
+}
+
+// Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
+void _translate_square(unsigned char& square) {
+    uint8_t row = square & 0xf;
+    uint8_t col = square >> 4;
+    square = col;
+    square += ((7 - row) * 0x10);
+}
+
+// Translates some data into what the actual engine uses; moves, for example.
+extern "C" void engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
+    // game_data->castling
+    _translate_castling(game_data->castling);
+    // game_data->ep_square
+    if (!game_data->ep_square) game_data->ep_square = 64;
+    else _translate_square(game_data->ep_square);
+    // game_data->halfmove_clock
+    game_data->halfmove_clock++;
+    // game_data->side_to_move
+    game_data->side_to_move = -1;
+    // game_data->white_king_sq
+    _translate_square(game_data->white_king_sq);
+    // game_data->black_king_sq
+    _translate_square(game_data->black_king_sq);
+    _engine(board, game_data, last_move);
 }
