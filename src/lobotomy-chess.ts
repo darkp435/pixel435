@@ -156,11 +156,21 @@ class Board {
         return piece === ChessPiece.BBishop || piece === ChessPiece.BKing || piece === ChessPiece.BKnight || piece === ChessPiece.BPawn || piece === ChessPiece.BQueen || piece === ChessPiece.BRook
     }
 
+    executeEngine() {
+        const params = this.getRequiredBotInfo()
+        const boardPtr = params[0]
+        const egiPtr = params[1]
+        Module._engine(boardPtr, egiPtr)
+        Module._free(boardPtr)
+        Module._free(egiPtr)
+    }
+
     private _promotionHandler(coord: GridCoord, pieceType: ChessPiece) {
         document.querySelector(".promotion")!.remove()
         this.setPiece(coord, pieceType)
         document.getElementById(`${coord.row}-${coord.col}`)!.style.backgroundImage = `url(${pieceToDisplay(pieceType)})`
-        nextTurn = true
+        botsTurn = true
+        this.executeEngine()
     }
 
     private _promote(coord: GridCoord) {
@@ -193,7 +203,7 @@ class Board {
 
         const bishop = document.createElement("img")
         bishop.src = "../assets/white-bishop.png"
-        bishop.alt = "N"
+        bishop.alt = "B"
         bishop.onclick = () => this._promotionHandler(coord, ChessPiece.WBishop)
         promotionBox.appendChild(bishop)
     }
@@ -227,7 +237,9 @@ class Board {
     }
 
     // Transforms the chessboard to 0x88 encoding
-    chessBoardToCoolerChessBoard() {
+    chessBoardTo88(): Int8Array
+    chessBoardTo88(board: Array<Array<ChessPiece | null>>): Int8Array
+    chessBoardTo88(board?: Array<Array<ChessPiece | null>>): Int8Array {
         const flattened = []
         // Init the array with all 0s
         for (let _ = 0; _ < 128; _++) {
@@ -236,8 +248,8 @@ class Board {
         for (let rank = 0; rank < 8; rank++) {
             for (let file = 0; file < 8; file++) {
                 const index88 = rank * 16 + file
-                // Number is needed so that nulls get transformed into 0s
-                flattened[index88] = Number(this.grid[rank][file])
+                // Number() is needed so that nulls get transformed into 0s
+                flattened[index88] = Number(!board ? this.grid[rank][file] : board[rank][file])
             }
         }
 
@@ -368,13 +380,22 @@ class Board {
         return grid
     }
 
+    private isInCheck(grid: Array<Array<ChessPiece | null>>) {
+        const board88 = this.chessBoardTo88(grid)
+        const buf = Module._malloc(128)
+        Module.HEAP8.set(board88, buf)
+        
+    }
+
     // Need to check conditions #1, #2 and #4
     private _castle(castleType: Castle) {
-        console.log(castleType)
-        // #1 The king cannot castle out of check
-        if (this.leavesKingInCheck(this.grid)) return false
-        // #2 The king cannot castle through check
         const newGrid = structuredClone(this.grid)
+        // #1 The king cannot castle out of check
+        const board88 = this.chessBoardTo88(newGrid)
+        const buf = Module._malloc(128)
+        Module.HEAP8.set(board88, buf)
+        if (Module._is_in_check(buf, 1, this.search(ChessPiece.WKing))) return false
+        // #2 The king cannot castle through check
         newGrid[0][4] = null
         if (castleType === Castle.Long) newGrid[0][3] = ChessPiece.WKing
         else newGrid[0][5] = ChessPiece.WKing
@@ -492,13 +513,12 @@ class Board {
             return
         }
 
-        nextTurn = true
-
         // Promotion
         if (pieceType === ChessPiece.WPawn && to.row === 7) {
             this._promote(to)
         } else {
-            nextTurn = true
+            botsTurn = true
+            this.executeEngine()
         }
 
         this.setPiece(from, null)
@@ -528,7 +548,7 @@ class Board {
     }
 
     getRequiredBotInfo() {
-        const boardBytes = this.chessBoardToCoolerChessBoard()
+        const boardBytes = this.chessBoardTo88()
         const boardPtr = Module._malloc(128)
         Module.HEAP8.set(boardBytes, boardPtr)
         const total = cString("TOTAL_SIZE")
