@@ -41,12 +41,18 @@
 // - Added castling. There was a bug that led to
 //   the king disappearing and it took about 30
 //   minutes and all my sanity to fix.
+// 17/07 - 19/07
+// - Continued integrating chess engine
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
-const Module = await createModule()
-let nextTurn = true
+const Wasm = await createModule()
 let botsTurn = false
+
+const castlingOffset = Wasm._get_offset(cString("castling"))
+const epSquareOffset = Wasm._get_offset(cString("ep_square"))
+const whiteKingSqOffset = Wasm._get_offset(cString("white_king_sq"))
+const blackKingSqOffset = Wasm._get_offset(cString("black_king_sq"))
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -61,6 +67,38 @@ class GridCoord {
 /**  Returns the absolute difference between two numbers. */
 function difference(a: number, b: number) {
     return Math.abs(a - b)
+}
+
+/** Unpacks the 0x88 chess board into normal form and returns it. */
+function unpackGrid(boardPtr: number) {
+    // Values don't matter but null just to be safe
+    const newBoard = [
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null]
+    ]
+
+    let index = 0
+
+    // Iterate our way downwards because for his board's first index is a8, not a1
+    for (let row = 7; row > -1; row--) {
+        for (let col = 0; col < 8; col++) {
+            newBoard[row][col] = Wasm.getValue(boardPtr + index, "i8")
+            index++
+        }
+        index += 8
+    }
+
+    return newBoard
+}
+
+/** Does the opposite of compact function: extracts the two integers */
+function uncompact(byte: number) {
+    return [byte >> 4, byte & 0xf]
 }
 
 // Values assigned to be compatible with engine.cpp
@@ -94,11 +132,13 @@ class Board {
     private isTurn: boolean
     private castle: Castle
     private enPassant: GridCoord | null
+    private blackCastle: Castle
 
     constructor() {
         this.isTurn = true
         this.enPassant = null
         this.castle = Castle.Both
+        this.blackCastle = Castle.Both
         type CP = ChessPiece
         const CP = ChessPiece
 
@@ -160,9 +200,15 @@ class Board {
         const params = this.getRequiredBotInfo()
         const boardPtr = params[0]
         const egiPtr = params[1]
-        Module._engine(boardPtr, egiPtr)
-        Module._free(boardPtr)
-        Module._free(egiPtr)
+        Wasm._engine(boardPtr, egiPtr)
+        this.grid = unpackGrid(boardPtr)
+        const castleUnpacked = uncompact(Wasm.getValue(egiPtr + castlingOffset, "u8"))
+        this.castle = castleUnpacked[0]
+        this.blackCastle = castleUnpacked[1]
+        const epSquare = uncompact(Wasm.getValue(egiPtr + epSquareOffset, "u8"))
+        this.enPassant = new GridCoord(epSquare[0], epSquare[1])
+        Wasm._free(boardPtr)
+        Wasm._free(egiPtr)
     }
 
     private _promotionHandler(coord: GridCoord, pieceType: ChessPiece) {
@@ -171,6 +217,7 @@ class Board {
         document.getElementById(`${coord.row}-${coord.col}`)!.style.backgroundImage = `url(${pieceToDisplay(pieceType)})`
         botsTurn = true
         this.executeEngine()
+        botsTurn = false
     }
 
     private _promote(coord: GridCoord) {
@@ -222,13 +269,19 @@ class Board {
             this.getPiece(to) === null 
             && this.getPiece(to.row - 1, to.col) === null
         ) {
-            this.enPassant = new GridCoord(to.row - 1, to.col)
+            this.enPassant = new GridCoord(to.row, to.col)
             return true
         }
 
+        // Special case: we check if the king will be in check due to this modifying the board.
         // En passant
         if (this.enPassant !== null && to.isEqual(this.enPassant)) {
-            this.setPiece(new GridCoord(this.enPassant.row - 1, this.enPassant.col), null)
+            const clone = structuredClone(this.grid)
+            clone[to.row][to.col] = ChessPiece.WPawn
+            clone[from.row][from.col] = null
+            clone[to.row - 1][to.col] = null
+            if (this.isInCheck(clone)) return false
+            this.setPiece(new GridCoord(this.enPassant.row, this.enPassant.col), null)
             this.enPassant = null
             return true
         }
@@ -382,31 +435,34 @@ class Board {
 
     private isInCheck(grid: Array<Array<ChessPiece | null>>) {
         const board88 = this.chessBoardTo88(grid)
-        const buf = Module._malloc(128)
-        Module.HEAP8.set(board88, buf)
-        
+        const buf = Wasm._malloc(128)
+        Wasm.HEAP8.set(board88, buf)
+        const kingPos = this.search(ChessPiece.WKing, grid)
+        const res = Wasm._is_in_check(buf, 1, compact(kingPos.row, kingPos.col))
+        Wasm._free(buf)
+        return Boolean(res)
     }
 
     // Need to check conditions #1, #2 and #4
     private _castle(castleType: Castle) {
         const newGrid = structuredClone(this.grid)
         // #1 The king cannot castle out of check
-        const board88 = this.chessBoardTo88(newGrid)
-        const buf = Module._malloc(128)
-        Module.HEAP8.set(board88, buf)
-        if (Module._is_in_check(buf, 1, this.search(ChessPiece.WKing))) return false
+
+        if (this.isInCheck(newGrid)) return false
         // #2 The king cannot castle through check
         newGrid[0][4] = null
+
         if (castleType === Castle.Long) newGrid[0][3] = ChessPiece.WKing
         else newGrid[0][5] = ChessPiece.WKing
-        if (this.leavesKingInCheck(newGrid)) return false
+
+        if (this.isInCheck(newGrid)) return false
         // #4 All squares in the path must be empty
         if (
             (castleType === Castle.Long && this.coordsHasPiece(new GridCoord(0, 1), new GridCoord(0, 2), new GridCoord(0, 3))) ||
             (castleType === Castle.Short && this.coordsHasPiece(new GridCoord(0, 5), new GridCoord(0, 6)))
         ) return false
         // Remember, the king can't walk into check
-        if (this.leavesKingInCheck(this._computeCastle(castleType, structuredClone(this.grid)))) return false
+        if (this.isInCheck(this._computeCastle(castleType, structuredClone(this.grid)))) return false
         this.castle = Castle.None
         this._computeCastle(castleType, this.grid)
         return true
@@ -503,6 +559,11 @@ class Board {
             return false
         }
 
+        const clone = structuredClone(this.grid)
+        clone[from.row][from.col] = null
+        clone[to.row][to.col] = piece
+        if (this.isInCheck(clone)) return false
+
         return true
     }
 
@@ -519,6 +580,7 @@ class Board {
         } else {
             botsTurn = true
             this.executeEngine()
+            botsTurn = false
         }
 
         this.setPiece(from, null)
@@ -536,10 +598,12 @@ class Board {
     }
 
     // Used for white and black king for getRequiredBotInfo
-    private search(piece: ChessPiece) {
+    private search(piece: ChessPiece, customBoard?: Array<Array<ChessPiece | null>>) {
+        const desiredBoard = customBoard ? customBoard : this.grid
+
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
-                if (this.getPiece(row, col) === piece) return new GridCoord(row, col)
+                if (desiredBoard[row][col] === piece) return new GridCoord(row, col)
             }
         }
 
@@ -549,31 +613,27 @@ class Board {
 
     getRequiredBotInfo() {
         const boardBytes = this.chessBoardTo88()
-        const boardPtr = Module._malloc(128)
-        Module.HEAP8.set(boardBytes, boardPtr)
+        const boardPtr = Wasm._malloc(128)
+        Wasm.HEAP8.set(boardBytes, boardPtr)
         const total = cString("TOTAL_SIZE")
-        const egiPtr = Module._malloc(Module._get_offset(total))
-        const castlingOffset = Module._get_offset(cString("castling"))
-        const epSquareOffset = Module._get_offset(cString("ep_square"))
-        const whiteKingSqOffset = Module._get_offset(cString("white_king_sq"))
-        const blackKingSqOffset = Module._get_offset(cString("black_king_sq"))
-        Module.setValue(egiPtr + castlingOffset, this.castle, "u8")
-        if (this.enPassant === null) Module.setValue(egiPtr + epSquareOffset, 0, "u8")
-        else Module.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "u8")
-        Module.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "u8")
-        Module.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "u8")
+        const egiPtr = Wasm._malloc(Wasm._get_offset(total))
+        Wasm.setValue(egiPtr + castlingOffset, compact(this.castle, this.blackCastle), "u8")
+        if (this.enPassant === null) Wasm.setValue(egiPtr + epSquareOffset, 0, "u8")
+        else Wasm.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "u8")
+        Wasm.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "u8")
+        Wasm.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "u8")
         return [boardPtr, egiPtr]
     }
 }
 
 function cString(str: string) {
-    const size = Module.lengthBytesUTF8(str) + 1
-    const ptr = Module._malloc(size)
-    Module.stringToUTF8(str, ptr, size)
+    const size = Wasm.lengthBytesUTF8(str) + 1
+    const ptr = Wasm._malloc(size)
+    Wasm.stringToUTF8(str, ptr, size)
     return ptr
 }
 
-console.log("Dev version 3")
+console.log("Dev version 4")
 const board = new Board()
 
 // Use pieceToDisplay instead of _chessPieceMap!
@@ -643,7 +703,7 @@ for (let i = 7; i > -1; i--) {
 let selectedElement: GridCoord | undefined
 
 domBoard.addEventListener('click', (event) => {
-    if (nextTurn && !botsTurn && event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
+    if (!botsTurn && event.target && event.target instanceof Element && event.target.matches(".chess-button")) {
         const target = event.target
         const id = target.id
         const piece = board.getPiece(id)
