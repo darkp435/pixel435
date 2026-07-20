@@ -595,6 +595,9 @@ class Board {
         this.setPiece(to, pieceType)
         const display = pieceToDisplay(pieceType)
         document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
+        if (pieceType === ChessPiece.WPawn) {
+            document.body.style.backgroundColor = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
+        }
 
         // Promotion
         if (pieceType === ChessPiece.WPawn && to.row === 7) {
@@ -641,6 +644,10 @@ class Board {
         Wasm.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "i8")
         return [boardPtr, egiPtr]
     }
+}
+
+function randint(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function cString(str: string) {

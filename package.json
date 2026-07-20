@@ -12,7 +12,6 @@
   "description": "",
   "dependencies": {
     "@types/mathjax": "^0.0.40",
-    "is-even": "^1.0.0",
     "mini-css-extract-plugin": "^2.9.2",
     "npm": "^11.2.0"
   },
