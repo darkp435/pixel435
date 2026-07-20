@@ -86,7 +86,7 @@ function unpackGrid(boardPtr: number) {
     let index = 0
 
     // Iterate our way downwards because for his board's first index is a8, not a1
-    for (let row = 0; row < 8; row++) {
+    for (let row = 7; row > -1; row--) {
         for (let col = 0; col < 8; col++) {
             const val = Wasm.getValue(boardPtr + index, "i8")
             if (val === 0) newBoard[row][col] = null
@@ -316,7 +316,7 @@ class Board {
         }
         for (let rank = 0; rank < 8; rank++) {
             for (let file = 0; file < 8; file++) {
-                const index88 = rank * 16 + file
+                const index88 = (7 - rank) * 16 + file
                 // Number() is needed so that nulls get transformed into 0s
                 flattened[index88] = Number(!board ? this.grid[rank][file] : board[rank][file])
             }
