@@ -79,15 +79,18 @@ function unpackGrid(boardPtr: number) {
         [null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null]
     ]
 
     let index = 0
 
     // Iterate our way downwards because for his board's first index is a8, not a1
-    for (let row = 7; row > -1; row--) {
+    for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            newBoard[row][col] = Wasm.getValue(boardPtr + index, "i8")
+            const val = Wasm.getValue(boardPtr + index, "i8")
+            if (val === 0) newBoard[row][col] = null
+            else newBoard[row][col] = val
             index++
         }
         index += 8
@@ -196,19 +199,32 @@ class Board {
         return piece === ChessPiece.BBishop || piece === ChessPiece.BKing || piece === ChessPiece.BKnight || piece === ChessPiece.BPawn || piece === ChessPiece.BQueen || piece === ChessPiece.BRook
     }
 
+    /** Redraws the ENTIRE board so this may tank performance */
+    redraw() {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const element = this.grid[row][col];
+                const domElement = document.getElementById(`${row}-${col}`) as HTMLElement
+                const style = element === null ? "none" : `url(${pieceToDisplay(element)})`
+                domElement.style.backgroundImage = style
+            }
+        }
+    }
+
     executeEngine() {
         const params = this.getRequiredBotInfo()
         const boardPtr = params[0]
         const egiPtr = params[1]
         Wasm._engine(boardPtr, egiPtr)
         this.grid = unpackGrid(boardPtr)
-        const castleUnpacked = uncompact(Wasm.getValue(egiPtr + castlingOffset, "u8"))
+        const castleUnpacked = uncompact(Wasm.getValue(egiPtr + castlingOffset, "i8"))
         this.castle = castleUnpacked[0]
         this.blackCastle = castleUnpacked[1]
-        const epSquare = uncompact(Wasm.getValue(egiPtr + epSquareOffset, "u8"))
+        const epSquare = uncompact(Wasm.getValue(egiPtr + epSquareOffset, "i8"))
         this.enPassant = new GridCoord(epSquare[0], epSquare[1])
         Wasm._free(boardPtr)
         Wasm._free(egiPtr)
+        this.redraw()
     }
 
     private _promotionHandler(coord: GridCoord, pieceType: ChessPiece) {
@@ -574,6 +590,12 @@ class Board {
             return
         }
 
+        this.setPiece(from, null)
+        document.getElementById(`${from.row}-${from.col}`)!.style.backgroundImage = "none"
+        this.setPiece(to, pieceType)
+        const display = pieceToDisplay(pieceType)
+        document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
+
         // Promotion
         if (pieceType === ChessPiece.WPawn && to.row === 7) {
             this._promote(to)
@@ -583,11 +605,6 @@ class Board {
             botsTurn = false
         }
 
-        this.setPiece(from, null)
-        document.getElementById(`${from.row}-${from.col}`)!.style.backgroundImage = "none"
-        this.setPiece(to, pieceType)
-        const display = pieceToDisplay(pieceType)
-        document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
         // console.log(this.getPiece(0, 4));
         // console.log(this.getPiece(0, 6));
     }
@@ -617,11 +634,11 @@ class Board {
         Wasm.HEAP8.set(boardBytes, boardPtr)
         const total = cString("TOTAL_SIZE")
         const egiPtr = Wasm._malloc(Wasm._get_offset(total))
-        Wasm.setValue(egiPtr + castlingOffset, compact(this.castle, this.blackCastle), "u8")
-        if (this.enPassant === null) Wasm.setValue(egiPtr + epSquareOffset, 0, "u8")
-        else Wasm.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "u8")
-        Wasm.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "u8")
-        Wasm.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "u8")
+        Wasm.setValue(egiPtr + castlingOffset, compact(this.castle, this.blackCastle), "i8")
+        if (this.enPassant === null) Wasm.setValue(egiPtr + epSquareOffset, 0, "i8")
+        else Wasm.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "i8")
+        Wasm.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "i8")
+        Wasm.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "i8")
         return [boardPtr, egiPtr]
     }
 }
@@ -708,7 +725,7 @@ domBoard.addEventListener('click', (event) => {
         const id = target.id
         const piece = board.getPiece(id)
         const coord = idToGridCoord(id)
-        if (selectedElement && (board.isEnemyPiece(coord) || piece === null)) {
+        if (selectedElement && (board.isEnemyPiece(coord) || !piece)) {
             board.move(selectedElement, coord)
         } else {
             selectedElement = coord
