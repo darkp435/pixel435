@@ -1,0 +1,1 @@
+//! FIXME: the king can at the moment castle with an enemy rook!

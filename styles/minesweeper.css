@@ -1,12 +1,14 @@
 body {
     font-family: "Stack Sans Text", sans-serif;
+    background: rgb(255, 197, 131);
 }
 
 .mnsw-btn {
     width: 45px;
     height: 45px;
-    margin: 3px;
+    margin: 0px;
     border-radius: 0px;
+    border-width: 2px;
     border-color: black;
     transition: background-color 0.1s ease;
     font-size: 1.25em;
@@ -47,6 +49,10 @@ button {
     height: 45px;
 }
 
+.mnsw-flagged:hover {
+    background-color: rgb(255, 242, 0) !important;
+}
+
 h4 {
     margin-top: 0px;
     margin-bottom: 0px;
@@ -54,6 +60,10 @@ h4 {
 
 .mnsw-lost {
     background-color: rgb(255, 0, 0);
+}
+
+.mnsw-lost:hover {
+    background-color: rgb(255, 0, 0) !important;
 }
 
 .mnsw-btn:hover {
@@ -76,9 +86,9 @@ button:disabled:active {
 
 #main {
     display: grid;
-    grid-template-columns: repeat(12, 45px);
-    grid-template-rows: repeat(12, 45px);
-    gap: 5px;
+    grid-template-columns: repeat(15, 45px);
+    grid-template-rows: repeat(15, 45px);
+    gap: 0px;
 }
 
 #tut-container {
@@ -94,4 +104,54 @@ h6 {
 
 p {
     margin: 0px;
+}
+
+#tutorial {
+    margin: 10px;
+    width: 125px;
+    height: 25px;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    display: none;
+}
+
+.captcha-box {
+    background: white;
+    border: 3px solid black;
+    width: 40vw;
+    height: 80vh;
+}
+
+.captcha-heading {
+    width: 40vw;
+    height: 3rem;
+    background-color: #00fff2;
+    border-bottom: 1px solid black;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.captcha-heading-text {
+    margin: 0;
+    font-family: "Roboto", sans-serif;
+    font-size: 24px;
+}
+
+.prompt {
+    margin-left: 5px;
+    font-size: 20px;
+    font-family: "Roboto", sans-serif;
+}
+
+.additional-prompt {
+    margin-left: 5px;
+    font-family: "Roboto", sans-serif;
 }

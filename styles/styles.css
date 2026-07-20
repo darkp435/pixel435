@@ -423,6 +423,12 @@ Ensure the default browser behavior of the `hidden` attribute.
     max-width: 1536px;
   }
 }
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -579,9 +585,7 @@ Ensure the default browser behavior of the `hidden` attribute.
   color: rgb(55 65 81 / var(--tw-text-opacity));
 }
 .transition {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;
   transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
