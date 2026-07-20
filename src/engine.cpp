@@ -202,6 +202,8 @@ extern "C" size_t get_offset(const char* member) {
 // Back to C89 we go, lads!
 #pragma endregion
 
+#pragma region Chess Engine
+
 typedef struct {
     Zobrist key; // 4B
     short score; // 2B
@@ -1775,6 +1777,8 @@ void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
 
     free(tt);
 }
+
+#pragma endregion
 
 // Translates TS version of castling into one compatible for chess engine.
 unsigned char _encode_castling(unsigned char castling) {

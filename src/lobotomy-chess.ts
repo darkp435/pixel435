@@ -6,43 +6,43 @@
 // Devlog
 // 25/06
 // - Started working on project.
-// - Started transpiling Frank's chess engine. Underestimated
-//   how bad Frank's code was. Contemplating life choices.
+// - Started transpiling Frank's chess engine. Underestimated how bad
+//   Frank's code was. Contemplating life choices.
 // 26/06
-// - Started working on actual chess logic until I realised
-//   that it's gonna be an adventure writing it.
+// - Started working on actual chess logic until I realised that it's
+//   gonna be an adventure writing it.
 // - Continued transpilation of engine.c into engine.ts
 // 29/06
 // - Continued working on chess logic, specifically moves.
-// - Realised handling castling and en passant was going
-//   to be a big pain.
+// - Realised handling castling and en passant was going to be a big
+//   pain.
 // 30/06
-// - Worked on chess engine because I realised that the
-//   chess logic was gonna be a pain.
+// - Worked on chess engine because I realised that the chess logic
+//   was gonna be a pain.
 // 01/07
-// - Worked on chess engine and saw the pyramid of doom.
-//   Severely regretted life choices. Why does Frank's
-//   code have to be so bad??? Like, is there no other
-//   way to write code without 4 levels of nested
-//   if statements?
+// - Worked on chess engine and saw the pyramid of doom. Severely
+//   regretted life choices. Why does Frank's code have to be so
+//   bad??? Like, is there no other way to write code without 4
+//   levels of nested if statements?
 // 14/07
-// - Wrote the logic for bishop, rook, pawn and queen
-//   moves.
+// - Wrote the logic for bishop, rook, pawn and queen moves.
 // 15/07
-// - Fixed the logic for the aforementioned pieces
-//   and add king moves. Man I hate off-by-one errors.
-// - Switched to WebAssembly instead of manual
-//   transpilation because I realised it's faster
-//   and less painful.
+// - Fixed the logic for the aforementioned pieces and add king
+//   moves. Man I hate off-by-one errors.
+// - Switched to WebAssembly instead of manual transpilation because
+//   I realised it's faster and less painful.
 // - Add actual icons for the chess pieces.
 // - Wrote some CSS to make the website look good.
 // 16/07
 // - Added promotion
-// - Added castling. There was a bug that led to
-//   the king disappearing and it took about 30
-//   minutes and all my sanity to fix.
+// - Added castling. There was a bug that led to the king disappearing
+//   and it took about 30 minutes and all my sanity to fix.
 // 17/07 - 19/07
 // - Continued integrating chess engine
+// 20/07
+// - Fixed several major bugs concerning the chess engine and it
+//   half-works now. Yippee!
+// - Code is definitely due for a refactor
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
