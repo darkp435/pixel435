@@ -884,10 +884,13 @@ int _is_in_check(Piece board[], char side, Square king_sq) {
 // Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
 // king_sq is provided as 4 bits to the row and the other 4 bits to the column
 extern "C" int is_in_check(Piece board[], char side, unsigned char king_sq) {
-    uint8_t row = king_sq & 0xf;
-    uint8_t col = king_sq >> 4;
+    uint8_t row = king_sq >> 4;
+    printf("King row: %d\n", row);
+    uint8_t col = king_sq & 0xf;
+    printf("King col: %d\n", col);
     unsigned char res = col;
     res += ((7 - row) * 0x10);
+    printf("%x\n", res);
     return _is_in_check(board, side, res);
 }
 
@@ -1823,8 +1826,8 @@ unsigned char _encode_castling(unsigned char castling) {
 
 // Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
 unsigned char _translate_square(unsigned char square) {
-    uint8_t row = square & 0xf;
-    uint8_t col = square >> 4;
+    uint8_t col = square & 0xf;
+    uint8_t row = square >> 4;
     unsigned char res = col;
     res += ((7 - row) * 0x10);
     return TO_6BIT(res);

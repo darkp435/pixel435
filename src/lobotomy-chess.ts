@@ -48,11 +48,17 @@ const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 import createModule from "./engine.js"
 const Wasm = await createModule()
 let botsTurn = false
+let boardRotationDeg = 0
+
+const iceDaggerInterval = 50
 
 const castlingOffset = Wasm._get_offset(cString("castling"))
 const epSquareOffset = Wasm._get_offset(cString("ep_square"))
 const whiteKingSqOffset = Wasm._get_offset(cString("white_king_sq"))
 const blackKingSqOffset = Wasm._get_offset(cString("black_king_sq"))
+
+const width = window.innerWidth
+const height = window.innerHeight
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -597,6 +603,32 @@ class Board {
         document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
         if (pieceType === ChessPiece.WPawn) {
             document.body.style.backgroundColor = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
+            boardRotationDeg += randint(5, 45)
+            chessBoard.style.transform = `rotate(${boardRotationDeg}deg)`
+        }
+        if (pieceType === ChessPiece.WQueen) {
+            // 500. Ice. Daggers.
+            const iceDaggerList: Array<HTMLElement> = []
+            let times = randint(50, 250)
+            const iceDaggerSpam = setInterval(() => {
+                times--
+                if (times === 0) {
+                    clearInterval(iceDaggerSpam)
+                    setTimeout(() => {
+                        iceDaggerList.forEach(element => {
+                            element.remove()
+                        });
+                    }, iceDaggerInterval * 100)
+                }
+
+                const iceDagger = document.createElement("div")
+                iceDagger.classList.add("ice-dagger")
+                iceDagger.style.bottom = `${randint(0, height)}px`
+                iceDagger.style.right = `${randint(0, width)}px`
+                iceDagger.style.transform = `rotate(${randint(1, 179)}deg)`
+                iceDaggerList.push(iceDagger)
+                document.body.appendChild(iceDagger)
+            }, iceDaggerInterval);
         }
 
         // Promotion
@@ -718,6 +750,24 @@ for (let i = 7; i > -1; i--) {
         square.id = `${i}-${j}`
         const display = pieceToDisplay(board.getPiece(i,j))
         square.style.backgroundImage = display === '' ? 'none' : `url(${display})`
+        square.draggable = true
+        square.addEventListener("dragstart", (e) => {
+            if (!e.target || !(e.target instanceof Element)) return
+            e.dataTransfer!.setData("text/plain", e.target.id)
+        })
+        square.addEventListener("dragover", (e) => {
+            e.preventDefault()
+        })
+        square.addEventListener("drop", (e) => {
+            e.preventDefault()
+            if (!e.target || !(e.target instanceof Element) || !(e.target.matches(".chess-button"))) return
+            const id = e.dataTransfer!.getData("text/plain")
+            const fromCoord = idToGridCoord(id)
+            const coord = idToGridCoord(e.target.id)
+            if (!botsTurn && (board.isEnemyPiece(coord) || !board.getPiece(e.target.id))) {
+                board.move(fromCoord, coord)
+            }
+        })
         square.classList.add("chess-button")
         square.classList.add(black ? "black-tile" : "white-tile")
         black = !black

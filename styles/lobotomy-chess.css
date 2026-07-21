@@ -52,3 +52,14 @@ img {
     margin-left: 0.2rem;
     margin-top: 0.1rem;
 }
+
+.ice-dagger {
+    position: absolute;
+    width: 180px;
+    height: 200px;
+    z-index: 99;
+    background-image: url("../assets/ice-dagger.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
