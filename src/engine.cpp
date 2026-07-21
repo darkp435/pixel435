@@ -44,6 +44,8 @@
 #define FLAG_EP 12
 #define MAX_MOVES 256
 #define MAX_Q_MOVES 128
+// The MAX_DEPTH and MAX_Q_DEPTH macros dictate how good the chess engine is.
+// Time increases exponentially as they are incremented.
 #define MAX_DEPTH 6
 #define MAX_Q_DEPTH 6
 #define MAX_EXT 3
@@ -58,15 +60,11 @@
 #define PHASE_MAXIMUM 256
 #define ISOLATION_PENALTY 15
 #define PASSED_REWARD 50
-#define SAFETY_BONUS 10
-#define OPEN_FILE_KING_PENALTY 20
 #define ORDER_LIMIT 6
-
 #define SIGN(X) ((X > 0) - (X < 0))
 #define TO_6BIT(X) (sq_tbl[X])
 #define TO_6BIT_C(X) (sq_tbl_c[X])
 #define ENCODE_MOVE(SF, T, F) ((SF << 12) | (T << 6) | F)
-#define IS_SLIDER(X) ((1U << X) & 56U)
 #define DECODE_DEST(X) (((X & 0x0E00) >> 5) | ((X & 0x01C0) >> 6))
 #define DECODE_FROM(X) (((X & 56) << 1) | (X & 7))
 #define BITBOARD_ON(HIGH, LOW, BIT) do {if (BIT > 31) HIGH |= (1U << (BIT & 31)); else LOW |= (1U << (BIT & 31));} while(0)
@@ -89,13 +87,9 @@
 #define TT_SIZE 1024
 #define TT_MASK 1023
 #define KILLERS_COUNT 3
-#define HISTORY_STACK_SIZE 16
 #define TT_FLAG_EXACT 0
 #define TT_FLAG_LOWER 1
 #define TT_FLAG_UPPER 2
-#define MOVES_TAB 0
-#define ENGINE_TAB 1
-#define DEBUG_TAB 2
 #define ZOBRIST_SIDE 0x9e3779b9u
 #define ZOBRIST_CASTLE(rights) (rights * 0x85ebca6bu)
 #define ZOBRIST_EP(ep_square) ((ep_square + 1) * 0xc2b2ae35u)
@@ -1415,64 +1409,6 @@ int fully_legal_moves(Piece board[], ExtraGameInfo *game_data, Move legal[], sho
     }
 
     return count;
-}
-
-int disambiguation_scan(Piece board[], Square origin, Square dest, Piece scan_piece) {
-    int return_val = 0;
-    int i;
-
-    switch (abs(scan_piece)) {
-        case WN:
-            for (i = 0; i < 8; i++) {
-                Square to = dest + knight_moves[i];
-                if (to & 0x88) continue;
-                if (to == origin) continue;
-                if (board[to] == scan_piece) {
-                    return_val |= ((origin & 7) == (to & 7)) ? 2 : 1;
-                }
-            }
-            break;
-        case WB:
-            for (i = 0; i < 8; i += 2) {
-                Square to = dest;
-                while (1) {
-                    to += queen_moves[i];
-                    if (to & 0x88) break;
-                    if (to == origin) break;
-                    if (board[to] == EMPTY) continue;
-                    if (board[to] == scan_piece) return_val |= ((origin & 7) == (to & 7)) ? 2 : 1;
-                    break;
-                }
-            }
-            break;
-        case WR:
-            for (i = 1; i < 9; i += 2) {
-                Square to = dest;
-                while (1) {
-                    to += queen_moves[i];
-                    if (to & 0x88) break;
-                    if (to == origin) break;
-                    if (board[to] == EMPTY) continue;
-                    if (board[to] == scan_piece) return_val |= ((origin & 7) == (to & 7)) ? 2 : 1;
-                    break;
-                }
-            }
-            break;
-        case WQ:
-            for (i = 0; i < 8; i++) {
-                Square to = dest;
-                while (1) {
-                    to += queen_moves[i];
-                    if (to & 0x88) break;
-                    if (to == origin) break;
-                    if (board[to] == EMPTY) continue;
-                    if (board[to] == scan_piece) return_val |= ((origin & 7) == (to & 7)) ? 2 : 1;
-                    break;
-                }
-            }
-            break;
-    }
-    return return_val;
 }
 
 short absolute_eval_mg(Piece board[], ExtraGameInfo* game_data) {
