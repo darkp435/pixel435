@@ -637,6 +637,7 @@ class Board {
         Wasm.HEAP8.set(boardBytes, boardPtr)
         const total = cString("TOTAL_SIZE")
         const egiPtr = Wasm._malloc(Wasm._get_offset(total))
+        Wasm._free(total)
         Wasm.setValue(egiPtr + castlingOffset, compact(this.castle, this.blackCastle), "i8")
         if (this.enPassant === null) Wasm.setValue(egiPtr + epSquareOffset, 0, "i8")
         else Wasm.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "i8")
