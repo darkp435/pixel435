@@ -12,6 +12,10 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .chess-button {
@@ -62,4 +66,22 @@ img {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+}
+
+.horse {
+    position: absolute;
+    left: 0;
+    height: 100px;
+    width: 300px;
+    animation: mustve-been-the-wind 0.5s linear;
+}
+
+@keyframes mustve-been-the-wind {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100vw);
+    }
 }

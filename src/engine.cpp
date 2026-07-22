@@ -12,55 +12,57 @@
 // - The original program featured a halfmove clock, but it has been removed in this program
 //   due to the extra hassle and not yielding much benefit.
 // - The ELO of this chess engine is approximately 1800, though it has not been benchmarked.
+//   Modifying MAX_DEPTH should increase/decrease the ELO according to the original author.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cstddef>
 #include <string>
 
-#define EMPTY 0
-#define WP 1
-#define WN 2
-#define WB 3
-#define WR 4
-#define WQ 5
-#define WK 6
-#define BP -1
-#define BN -2
-#define BB -3
-#define BR -4
-#define BQ -5
-#define BK -6
-#define WHITE 1
-#define BLACK -1
-#define FLAG_NONE 0
-#define FLAG_PROMO_N 4
-#define FLAG_PROMO_B 5
-#define FLAG_PROMO_R 6
-#define FLAG_PROMO_Q 7
+#define WP               1
+#define WN               2
+#define WB               3
+#define EMPTY            0
+#define WR               4
+#define WQ               5
+#define WK               6
+#define BP               -1
+#define BN               -2
+#define BB               -3
+#define BR               -4
+#define BQ               -5
+#define BK               -6
+#define WHITE            1
+#define BLACK            -1
+#define FLAG_NONE        0
+#define FLAG_PROMO_N     4
+#define FLAG_PROMO_B     5
+#define FLAG_PROMO_R     6
+#define FLAG_PROMO_Q     7
 #define FLAG_DOUBLE_STEP 8
-#define FLAG_CASTLE_S 9
-#define FLAG_CASTLE_L 10
-#define FLAG_EP 12
-#define MAX_MOVES 256
-#define MAX_Q_MOVES 128
+#define FLAG_CASTLE_S    9
+#define FLAG_CASTLE_L    10
+#define FLAG_EP          12
+#define MAX_MOVES        256
+#define MAX_Q_MOVES      128
 // The MAX_DEPTH and MAX_Q_DEPTH macros dictate how good the chess engine is.
 // Time increases exponentially as they are incremented.
-#define MAX_DEPTH 6
+#define MAX_DEPTH   6
 #define MAX_Q_DEPTH 6
-#define MAX_EXT 3
-#define MAX_EFFECTIVE_DEPTH 9
-#define NULL_MOVE_R 2
-#define NULL_MOVE_THRESHOLD 3
+
+#define MAX_EXT                3
+#define MAX_EFFECTIVE_DEPTH    9
+#define NULL_MOVE_R            2
+#define NULL_MOVE_THRESHOLD    3
 #define LATE_MOVE_DEPTH_CUTOFF 2
-#define LATE_MOVE_THRESHOLD 4
-#define DELTA_MARGIN 200 
-#define oo 32767
-#define MATE 32000
-#define PHASE_MAXIMUM 256
-#define ISOLATION_PENALTY 15
-#define PASSED_REWARD 50
-#define ORDER_LIMIT 6
+#define LATE_MOVE_THRESHOLD    4
+#define DELTA_MARGIN           200 
+#define oo                     32767
+#define MATE                   32000
+#define PHASE_MAXIMUM          256
+#define ISOLATION_PENALTY      15
+#define PASSED_REWARD          50
+#define ORDER_LIMIT            6
 #define SIGN(X) ((X > 0) - (X < 0))
 #define TO_6BIT(X) (sq_tbl[X])
 #define TO_6BIT_C(X) (sq_tbl_c[X])
@@ -106,7 +108,7 @@ constexpr char piece_names[] = " PNBRQK";
 
 typedef struct {
     unsigned char castling; // KQkq 1 = can 0 = can't
-    Square ep_square; // 64 if there is no en passant, otherwise square of the vul pawn
+    Square ep_square; // 128 if there is no en passant, otherwise square of the vul pawn
     char side_to_move; // 1 or -1
     Square white_king_sq;
     Square black_king_sq;
@@ -1790,7 +1792,7 @@ constexpr unsigned char decode_table[64] = {
 // sq_tbl[7] = h8
 #define DECODE(x) decode_table[x]
 
-int init = false;
+bool init = false;
 
 // First half of retval is white castling and second half is black castling
 unsigned char _decode_castling(unsigned char castling) {
@@ -1814,29 +1816,20 @@ unsigned char _decode_castling(unsigned char castling) {
 // Translates some data into what the actual engine uses; moves, for example.
 extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
     static ExtraGameInfo egi;
-    // castling
     egi.castling = _encode_castling(game_data->castling);
-    // ep_square
+
     if (!game_data->ep_square) egi.ep_square = 128;
     else egi.ep_square = _translate_square(game_data->ep_square);
-    // side_to_move
+
     egi.side_to_move = -1;
-    // white_king_sq
     egi.white_king_sq = _translate_square(game_data->white_king_sq);
-    // black_king_sq
     egi.black_king_sq = _translate_square(game_data->black_king_sq);
     if (!init) {
-        // white_pawn_struct
         egi.white_pawn_struct = 0;
-        // black_pawn_struct
         egi.black_pawn_struct = 0;
-        // white_pawn_score
         egi.white_pawn_score = 0;
-        // black_pawn_score
         egi.black_pawn_score = 0;
-        // phase
         egi.phase = 0;
-        // mg_eval and eg_modifier
         init_eval(board, &egi);
     }
     init = true;
@@ -1845,6 +1838,5 @@ extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
     // 128 indicates that there is no ep square
     if (egi.ep_square == 128) game_data->ep_square = _pack(8, 8);
     else game_data->ep_square = DECODE(egi.ep_square);
-    // Decode castling rights
     game_data->castling = _decode_castling(egi.castling);
 }

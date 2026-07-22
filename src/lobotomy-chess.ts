@@ -45,12 +45,14 @@
 // - Code is definitely due for a refactor
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
+// const metalPipe = document.getElementById("metal-pipe") as HTMLAudioElement
 import createModule from "./engine.js"
 const Wasm = await createModule()
 let botsTurn = false
 let boardRotationDeg = 0
 
-const iceDaggerInterval = 50
+const iceDaggerInterval = 25
+const horseAmount = 5
 
 const castlingOffset = Wasm._get_offset(cString("castling"))
 const epSquareOffset = Wasm._get_offset(cString("ep_square"))
@@ -605,6 +607,8 @@ class Board {
             document.body.style.backgroundColor = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
             boardRotationDeg += randint(5, 45)
             chessBoard.style.transform = `rotate(${boardRotationDeg}deg)`
+            const metalPipe = new Audio("../assets/metal-pipe.mp3")
+            metalPipe.play()
         }
         if (pieceType === ChessPiece.WQueen) {
             // 500. Ice. Daggers.
@@ -615,9 +619,7 @@ class Board {
                 if (times === 0) {
                     clearInterval(iceDaggerSpam)
                     setTimeout(() => {
-                        iceDaggerList.forEach(element => {
-                            element.remove()
-                        });
+                        iceDaggerList.forEach(element => element.remove());
                     }, iceDaggerInterval * 100)
                 }
 
@@ -629,6 +631,37 @@ class Board {
                 iceDaggerList.push(iceDagger)
                 document.body.appendChild(iceDagger)
             }, iceDaggerInterval);
+            const iceDaggerSfx = new Audio("../assets/ice-dagger.mp3")
+            iceDaggerSfx.play()
+        }
+
+        if (pieceType === ChessPiece.WBishop) {
+            document.body.style.backgroundImage = "url('../assets/scotland.png')"
+            const scotlandForever = new Audio("../assets/scotland-forever.mp3")
+            scotlandForever.play()
+        }
+
+        if (pieceType === ChessPiece.WRook) {
+            const theRook = new Audio("../assets/the-rook.mp3")
+            theRook.play()
+        }
+
+        if (pieceType === ChessPiece.WKing) {
+            const hobbitsToIsengard = new Audio("../assets/hobbits-isengard.mp3")
+            hobbitsToIsengard.play()
+        }
+
+        if (pieceType === ChessPiece.WKnight) {
+            for (let _ = 0; _ < horseAmount; _++) {
+                const horse = document.createElement("img")
+                horse.style.top = `${randint(0, height)}px`
+                horse.src = "../assets/horse.png"
+                horse.classList.add("horse")
+                document.body.appendChild(horse)
+                horse.addEventListener("animationend", () => horse.remove())
+            }
+            const horseNeigh = new Audio("../assets/horse.mp3")
+            horseNeigh.play()
         }
 
         // Promotion
