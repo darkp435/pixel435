@@ -8,16 +8,31 @@
 //   unadvised to do so.
 // - This is now intended to be ran as WebAssembly. Do not use any OS-dependent APIs. Setting
 //   Intellisense mode to clang-x64 is highly recommended for development. See
-//   BUILD-INSTRUCTIONS.md at the root directory of this project for compilation instructions.
+//   BUILD_INSTRUCTIONS.md at the root directory of this project for compilation instructions.
 // - The original program featured a halfmove clock, but it has been removed in this program
 //   due to the extra hassle and not yielding much benefit.
 // - The ELO of this chess engine is approximately 1800, though it has not been benchmarked.
-//   Modifying MAX_DEPTH should increase/decrease the ELO according to the original author.
+//   See BOOSTED macro below for more information.
+
+// Terminate compilation before anything bad happens
+#ifndef __EMSCRIPTEN__
+#error only emscripten is supported as the compiler
+#else
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cstddef>
 #include <string>
+#include <emscripten.h>
+
+// The following macro determines if the engine is being ran at it's original strength, or its
+// boosted strength by changing some of the macros defined later in this file. If it's boosted, the
+// chess engine will take significantly longer to "think", but plays better than its unboosted
+// version. For purposes of this website, it's recommended to **NOT** enable this flag as it is not
+// being ran in a Web Worker (as of writing this) which means it freezes the entire DOM. This is
+// just an experimental option.
+#define BOOSTED 0
 
 #define WP               1
 #define WN               2
@@ -45,10 +60,18 @@
 #define FLAG_EP          12
 #define MAX_MOVES        256
 #define MAX_Q_MOVES      128
+
 // The MAX_DEPTH and MAX_Q_DEPTH macros dictate how good the chess engine is.
 // Time increases exponentially as they are incremented.
+#if !BOOSTED
 #define MAX_DEPTH   6
 #define MAX_Q_DEPTH 6
+#define TT_SIZE 1024
+#else
+#define MAX_DEPTH 8
+#define MAX_Q_DEPTH 8
+#define TT_SIZE 65536
+#endif // BOOSTED
 
 #define MAX_EXT                3
 #define MAX_EFFECTIVE_DEPTH    9
@@ -86,7 +109,6 @@
 #define HISTORY_MAX 8192
 #define HISTORY_MAX_SHIFT 13
 #define HISTORY_DECAY_SHIFT 14
-#define TT_SIZE 1024
 #define TT_MASK 1023
 #define KILLERS_COUNT 3
 #define TT_FLAG_EXACT 0
@@ -106,7 +128,7 @@ constexpr char ranks[] = "87654321";
 constexpr char files[] = "abcdefgh";
 constexpr char piece_names[] = " PNBRQK";
 
-typedef struct {
+struct ExtraGameInfo {
     unsigned char castling; // KQkq 1 = can 0 = can't
     Square ep_square; // 128 if there is no en passant, otherwise square of the vul pawn
     char side_to_move; // 1 or -1
@@ -120,9 +142,9 @@ typedef struct {
     short mg_eval;
     short eg_modifier;
     Zobrist hash;
-} ExtraGameInfo;
+};
 
-typedef struct {
+struct Undo {
     Move move; // 2B
     char captured;
     unsigned char castling;
@@ -139,7 +161,7 @@ typedef struct {
     short mg_eval;
     short eg_modifier;
     Zobrist hash;
-} Undo; // Size: 33 bytes
+}; // Size: 33 bytes
 
 #pragma region Offset calculations
 // ------------------------------ WebAssembly Helper ------------------------------
@@ -191,7 +213,7 @@ size_t lookup(const Entry table[], std::string_view member) {
  * @param member The member that you wish to get the offset of.
  * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
  */
-extern "C" size_t get_offset(const char* member) {
+extern "C" EMSCRIPTEN_KEEPALIVE size_t get_offset(const char* member) {
     return lookup(EGIOffsets, member);
 }
 
@@ -200,13 +222,13 @@ extern "C" size_t get_offset(const char* member) {
 
 #pragma region Chess Engine
 
-typedef struct {
+struct TTEntry {
     Zobrist key; // 4B
     short score; // 2B
     Move best_move; // 2B
     char depth;
     char flag;
-} TTEntry; // 10 bytes
+}; // 10 bytes
 
 typedef unsigned short Texture;
 
@@ -879,7 +901,7 @@ int _is_in_check(Piece board[], char side, Square king_sq) {
 
 // Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
 // king_sq is provided as 4 bits to the row and the other 4 bits to the column
-extern "C" int is_in_check(Piece board[], char side, unsigned char king_sq) {
+extern "C" EMSCRIPTEN_KEEPALIVE int is_in_check(Piece board[], char side, unsigned char king_sq) {
     uint8_t row = king_sq >> 4;
     printf("King row: %d\n", row);
     uint8_t col = king_sq & 0xf;
@@ -1814,7 +1836,7 @@ unsigned char _decode_castling(unsigned char castling) {
 }
 
 // Translates some data into what the actual engine uses; moves, for example.
-extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
+extern "C" EMSCRIPTEN_KEEPALIVE void engine(Piece board[], IExtraGameInfo* game_data) {
     static ExtraGameInfo egi;
     egi.castling = _encode_castling(game_data->castling);
 
@@ -1840,3 +1862,5 @@ extern "C" void engine(Piece board[], IExtraGameInfo* game_data) {
     else game_data->ep_square = DECODE(egi.ep_square);
     game_data->castling = _decode_castling(egi.castling);
 }
+
+#endif // __EMSCRIPTEN__

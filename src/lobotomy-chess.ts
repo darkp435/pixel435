@@ -53,6 +53,7 @@ let boardRotationDeg = 0
 
 const iceDaggerInterval = 25
 const horseAmount = 5
+const scotlandFlagClearDuration = 10000
 
 const castlingOffset = Wasm._get_offset(cString("castling"))
 const epSquareOffset = Wasm._get_offset(cString("ep_square"))
@@ -595,6 +596,7 @@ class Board {
         const pieceType = this.getPiece(from)
 
         if (!this.isLegalMove(from, to)) {
+            new Audio("../assets/vine-boom.mp3").play()
             return
         }
 
@@ -604,7 +606,10 @@ class Board {
         const display = pieceToDisplay(pieceType)
         document.getElementById(`${to.row}-${to.col}`)!.style.backgroundImage = display === '' ? 'none' : `url(${display})`
         if (pieceType === ChessPiece.WPawn) {
-            document.body.style.backgroundColor = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
+            const startColor = `rgb(${randint(0, 255)}, ${randint(0, 255)}, ${randint(0, 255)})`
+            const midColor = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
+            const endColor = `rgb(${randint(0, 255)}, ${randint(0, 255)}, ${randint(0, 255)})`
+            document.body.style.backgroundImage = `linear-gradient(to right, ${startColor} 0%, ${midColor} 50%, ${endColor} 100%)`
             boardRotationDeg += randint(5, 45)
             chessBoard.style.transform = `rotate(${boardRotationDeg}deg)`
             const metalPipe = new Audio("../assets/metal-pipe.mp3")
@@ -638,12 +643,34 @@ class Board {
         if (pieceType === ChessPiece.WBishop) {
             document.body.style.backgroundImage = "url('../assets/scotland.png')"
             const scotlandForever = new Audio("../assets/scotland-forever.mp3")
+            const overlappedElements: HTMLImageElement[] = []
             scotlandForever.play()
+            for (let _ = 0; _ < randint(30, 60); _++) {
+                const scotland = document.createElement("img")
+                scotland.src = "../assets/scotland.png"
+                scotland.style.width = `${randint(50, 100)}px`
+                scotland.style.height = `${randint(20, 75)}px`
+                scotland.style.position = "absolute"
+                scotland.style.left = `${randint(0, width)}px`
+                scotland.style.top = `${randint(0, height)}px`
+                document.body.appendChild(scotland)
+                if (overlaps(chessBoard, scotland)) overlappedElements.push(scotland)
+            }
+            // As much as I want to cover the board permanently, that softlocks the player.
+            setTimeout(() => {
+                overlappedElements.forEach(el => el.remove())
+                document.body.style.backgroundImage = "none"
+            }, scotlandFlagClearDuration)
         }
 
         if (pieceType === ChessPiece.WRook) {
             const theRook = new Audio("../assets/the-rook.mp3")
             theRook.play()
+            document.querySelectorAll(".chess-button").forEach((el) => {
+                if (!(el instanceof HTMLElement)) return
+                const start = `rgb(${randint(0, 255)},${randint(0, 255)},${randint(0, 255)})`
+                el.style.backgroundColor = start
+            })
         }
 
         if (pieceType === ChessPiece.WKing) {
@@ -773,6 +800,18 @@ function compact(num1: number, num2: number) {
 
 const domBoard = document.getElementById("chess-board") as HTMLDivElement
 
+function overlaps(a: HTMLElement, b: HTMLElement) {
+    const r1 = a.getBoundingClientRect()
+    const r2 = b.getBoundingClientRect()
+
+    return !(
+        r1.right <= r2.left ||
+        r1.left >= r2.right ||
+        r1.bottom <= r2.top ||
+        r1.top >= r2.bottom
+    )
+}
+
 // Created via JS to avoid a gigantic HTML file
 // Text tile color
 let black = true
@@ -820,6 +859,8 @@ domBoard.addEventListener('click', (event) => {
             board.move(selectedElement, coord)
         } else {
             selectedElement = coord
+            const clickSfx = new Audio("../assets/error.mp3")
+            clickSfx.play()
         }
     }
 })
