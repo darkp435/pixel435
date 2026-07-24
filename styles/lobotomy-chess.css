@@ -12,6 +12,10 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .chess-button {
@@ -51,4 +55,96 @@ img {
     height: 2.8rem;
     margin-left: 0.2rem;
     margin-top: 0.1rem;
+}
+
+.ice-dagger {
+    position: absolute;
+    width: 180px;
+    height: 200px;
+    z-index: 99;
+    background-image: url("../assets/ice-dagger.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.horse {
+    position: absolute;
+    left: 0;
+    height: 100px;
+    width: 300px;
+    animation: mustve-been-the-wind 0.5s linear;
+}
+
+@keyframes mustve-been-the-wind {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100vw);
+    }
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: #ffe08b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-box {
+    border: 3px solid #000000;
+    border-radius: 3px;
+    background-color: #ffffff;
+    width: 30rem;
+    height: 20rem;
+}
+
+.text {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.title {
+    text-align: center;
+    font-size: 40px;
+    margin-top: 3px;
+    margin-bottom: 0px;
+}
+
+.main {
+    margin-top: 5px;
+    margin-left: 5px;
+    text-align: center;
+}
+
+.accept {
+    display: block;
+    width: 6rem;
+    height: 2rem;
+    margin: 0 auto;
+    border: 1px solid #000000;
+    border-radius: 2px;
+}
+
+.accept:hover {
+    background-color: antiquewhite;
+}
+
+.dvd {
+    position: absolute;
+    top: 0;
+    animation: dvd-waterfall 5s linear infinite;
+}
+
+@keyframes dvd-waterfall {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(100vh);
+    }
 }
