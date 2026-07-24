@@ -676,6 +676,11 @@ class Board {
         if (pieceType === ChessPiece.WKing) {
             const hobbitsToIsengard = new Audio("../assets/hobbits-isengard.mp3")
             hobbitsToIsengard.play()
+            const dvd = document.createElement("img")
+            dvd.src = "../assets/dvd.png"
+            dvd.classList.add("dvd")
+            dvd.style.left = `${randint(0, width)}px`
+            document.body.appendChild(dvd)
         }
 
         if (pieceType === ChessPiece.WKnight) {
@@ -864,3 +869,5 @@ domBoard.addEventListener('click', (event) => {
         }
     }
 })
+
+document.getElementById("accept")!.onclick = () => document.querySelector(".overlay")?.remove()
