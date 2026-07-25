@@ -390,13 +390,13 @@ class Board {
         } else {
             // Moving forwards
             if (to.row > from.row) {
-                for (let i = from.row; i < from.row; i++) {
-                    if (this.getPiece(from.row, i) !== null) return false
+                for (let i = from.row; i < to.row; i++) {
+                    if (this.getPiece(i, from.col) !== null) return false
                 }
             } else {
-                // Moving bakwards
+                // Moving backwards
                 for (let i = to.row + 1; i < from.row; i++) {
-                    if (this.getPiece(from.row, i) !== null) return false
+                    if (this.getPiece(i, from.col) !== null) return false
                 }
             }
         }
