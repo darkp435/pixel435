@@ -14,17 +14,21 @@
 // - The ELO of this chess engine is approximately 1800, though it has not been benchmarked.
 //   See BOOSTED macro below for more information.
 
-// Terminate compilation before anything bad happens
-#ifndef __EMSCRIPTEN__
-#error only emscripten is supported as the compiler
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#define ENGINE_EXPORT EMSCRIPTEN_KEEPALIVE
+#elif defined(__clang__) || defined(__GNUC__)
+#define ENGINE_EXPORT __attribute__((used))
+#elif defined(_MSC_VER)
+#define ENGINE_EXPORT __declspec(dllexport)
 #else
+#error incompatible compiler, use gcc/clang/msvc/emcc
+#endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cstddef>
 #include <string>
-#include <emscripten.h>
 
 // The following macro determines if the engine is being ran at it's original strength, or its
 // boosted strength by changing some of the macros defined later in this file. If it's boosted, the
@@ -213,7 +217,7 @@ size_t lookup(const Entry table[], std::string_view member) {
  * @param member The member that you wish to get the offset of.
  * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
  */
-extern "C" EMSCRIPTEN_KEEPALIVE size_t get_offset(const char* member) {
+extern "C" ENGINE_EXPORT size_t get_offset(const char* member) {
     return lookup(EGIOffsets, member);
 }
 
@@ -403,83 +407,38 @@ constexpr char queen_rays[8][7] = {
     {-1, -2, -3, -4, -5, -6, -7}
 };
 
-void compute_pawn_score(Piece board[], char side, unsigned long* my_pawn_structure, unsigned long* opp_pawn_structure, short* pawn_score) {
-    *pawn_score = 0;
+void compute_pawn_score(Piece board[], char side, unsigned long& my_pawn_structure, unsigned long& opp_pawn_structure, short& pawn_score) {
+    pawn_score = 0;
 
     // Isolation penalty
-    if (!(*my_pawn_structure & 0x1C0000)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 21) & 7);
-    if (!(*my_pawn_structure & 0xE38000)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 18) & 7);
-    if (!(*my_pawn_structure & 0x1C7000)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 15) & 7);
-    if (!(*my_pawn_structure & 0x038E00)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 12) & 7);
-    if (!(*my_pawn_structure & 0x0071C0)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 9) & 7);
-    if (!(*my_pawn_structure & 0x000E38)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 6) & 7);
-    if (!(*my_pawn_structure & 0x0001C7)) *pawn_score -= ISOLATION_PENALTY * ((*my_pawn_structure >> 3) & 7);
-    if (!(*my_pawn_structure & 0x000038)) *pawn_score -= ISOLATION_PENALTY * (*my_pawn_structure & 7);
+    if (!(my_pawn_structure & 0x1C0000)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 21) & 7);
+    if (!(my_pawn_structure & 0xE38000)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 18) & 7);
+    if (!(my_pawn_structure & 0x1C7000)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 15) & 7);
+    if (!(my_pawn_structure & 0x038E00)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 12) & 7);
+    if (!(my_pawn_structure & 0x0071C0)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 9) & 7);
+    if (!(my_pawn_structure & 0x000E38)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 6) & 7);
+    if (!(my_pawn_structure & 0x0001C7)) pawn_score -= ISOLATION_PENALTY * ((my_pawn_structure >> 3) & 7);
+    if (!(my_pawn_structure & 0x000038)) pawn_score -= ISOLATION_PENALTY * (my_pawn_structure & 7);
 
     // Doubled penalty
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 21) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 18) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 15) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 12) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 9) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 6) & 7];
-    *pawn_score -= doubled_penalty[(*my_pawn_structure >> 3) & 7];
-    *pawn_score -= doubled_penalty[*my_pawn_structure & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 21) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 18) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 15) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 12) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 9) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 6) & 7];
+    pawn_score -= doubled_penalty[(my_pawn_structure >> 3) & 7];
+    pawn_score -= doubled_penalty[my_pawn_structure & 7];
 
     // Passed reward
-    if (!(*opp_pawn_structure & 0xFC0000)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 21) & 7);
-    if (!(*opp_pawn_structure & 0xFF8000)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 18) & 7);
-    if (!(*opp_pawn_structure & 0x1FF000)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 15) & 7);
-    if (!(*opp_pawn_structure & 0x03FE00)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 12) & 7);
-    if (!(*opp_pawn_structure & 0x007FC0)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 9) & 7);
-    if (!(*opp_pawn_structure & 0x000FF8)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 6) & 7);
-    if (!(*opp_pawn_structure & 0x0001FF)) *pawn_score += PASSED_REWARD * ((*my_pawn_structure >> 3) & 7);
-    if (!(*opp_pawn_structure & 0x00003F)) *pawn_score += PASSED_REWARD * (*my_pawn_structure & 7);
-}
-
-void compute_piece_hashes(Piece board[], ExtraGameInfo* game_data) {
-    int i;
-    game_data->phase = 256u;
-    game_data->black_pawn_struct = 0ul;
-    game_data->white_pawn_struct = 0ul;
-    for (i = 0; i < 128; i++) {
-        if (i & 0x88) {
-            i += 7;
-            continue;
-        }
-        switch (board[i]) {
-            case WP:
-                game_data->white_pawn_struct += (1ul << (3 * (i & 7)));
-                break;
-            case WN:
-                game_data->phase -= phase_weight[WN];
-                break;
-            case WB:
-                game_data->phase -= phase_weight[WB];
-                break;
-            case WR:
-                game_data->phase -= phase_weight[WR];
-                break;
-            case WQ:
-                game_data->phase -= phase_weight[WQ];
-                break;
-            case BP:
-                game_data->black_pawn_struct += (1ul << (3 * (i & 7)));
-                break;
-            case BN:
-                game_data->phase -= phase_weight[WN];
-                break;
-            case BB:
-                game_data->phase -= phase_weight[WB];
-                break;
-            case BR:
-                game_data->phase -= phase_weight[WR];
-                break;
-            case BQ:
-                game_data->phase -= phase_weight[WQ];
-                break;
-        }
-    }
+    if (!(opp_pawn_structure & 0xFC0000)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 21) & 7);
+    if (!(opp_pawn_structure & 0xFF8000)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 18) & 7);
+    if (!(opp_pawn_structure & 0x1FF000)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 15) & 7);
+    if (!(opp_pawn_structure & 0x03FE00)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 12) & 7);
+    if (!(opp_pawn_structure & 0x007FC0)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 9) & 7);
+    if (!(opp_pawn_structure & 0x000FF8)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 6) & 7);
+    if (!(opp_pawn_structure & 0x0001FF)) pawn_score += PASSED_REWARD * ((my_pawn_structure >> 3) & 7);
+    if (!(opp_pawn_structure & 0x00003F)) pawn_score += PASSED_REWARD * (my_pawn_structure & 7);
 }
 
 // Lightweight 32-bit mixing hash
@@ -491,7 +450,7 @@ Zobrist zobrist_piece_square(char piece_index, char square) {
     return x;
 }
 
-Zobrist compute_hash(Piece board[], ExtraGameInfo* game_data) {
+Zobrist compute_hash(Piece board[], ExtraGameInfo& game_data) {
     int sq;
     Zobrist hash = 0;
     for (sq = 0; sq < 128; sq++) {
@@ -506,12 +465,12 @@ Zobrist compute_hash(Piece board[], ExtraGameInfo* game_data) {
         }
     }
 
-    if (game_data->side_to_move == BLACK)
+    if (game_data.side_to_move == BLACK)
         hash ^= ZOBRIST_SIDE;
 
-    hash ^= ZOBRIST_CASTLE(game_data->castling);
+    hash ^= ZOBRIST_CASTLE(game_data.castling);
 
-    hash ^= ZOBRIST_EP(game_data->ep_square & 7);  // file only
+    hash ^= ZOBRIST_EP(game_data.ep_square & 7);  // file only
 
     return hash;
 }
@@ -607,9 +566,8 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
             game_data->castling &= ~2U;
     }
 
-    // if (game_data->castling ^ undo->castling) {
-        game_data->hash ^= ZOBRIST_CASTLE(undo->castling);
-        game_data->hash ^= ZOBRIST_CASTLE(game_data->castling);
+    game_data->hash ^= ZOBRIST_CASTLE(undo->castling);
+    game_data->hash ^= ZOBRIST_CASTLE(game_data->castling);
     
 
     switch ((*move) >> 12) {
@@ -780,8 +738,8 @@ void make_move(Piece board[], ExtraGameInfo* game_data, Move* move, Undo* undo, 
     }
 
     if ((undo->white_pawn_struct ^ game_data->white_pawn_struct) || (undo->black_pawn_struct ^ game_data->black_pawn_struct)) {
-        compute_pawn_score(board, WHITE, &game_data->white_pawn_struct, &game_data->black_pawn_struct, &game_data->white_pawn_score);
-        compute_pawn_score(board, BLACK, &game_data->black_pawn_struct, &game_data->white_pawn_struct, &game_data->black_pawn_score);
+        compute_pawn_score(board, WHITE, game_data->white_pawn_struct, game_data->black_pawn_struct, game_data->white_pawn_score);
+        compute_pawn_score(board, BLACK, game_data->black_pawn_struct, game_data->white_pawn_struct, game_data->black_pawn_score);
         pawn_struct_updated = 1;
     }
 
@@ -901,14 +859,11 @@ int _is_in_check(Piece board[], char side, Square king_sq) {
 
 // Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
 // king_sq is provided as 4 bits to the row and the other 4 bits to the column
-extern "C" EMSCRIPTEN_KEEPALIVE int is_in_check(Piece board[], char side, unsigned char king_sq) {
+extern "C" ENGINE_EXPORT int is_in_check(Piece board[], char side, unsigned char king_sq) {
     uint8_t row = king_sq >> 4;
-    printf("King row: %d\n", row);
     uint8_t col = king_sq & 0xf;
-    printf("King col: %d\n", col);
     unsigned char res = col;
     res += ((7 - row) * 0x10);
-    printf("%x\n", res);
     return _is_in_check(board, side, res);
 }
 
@@ -974,8 +929,7 @@ int parse_check(Piece board[], char side, Square king_sq, HalfBitboard* block_bi
             if (SIGN(board[sq]) == side) break;
             if (abs(board[sq]) == WR || abs(board[sq]) == WQ) {
                 while (1) {
-                    if (sq & 0x88) break;
-                    if (sq == king_sq) break; 
+                    if (sq & 0x88 || sq == king_sq) break;
                     BITBOARD_ON(*block_bitboard_high, *block_bitboard_low, TO_6BIT(sq));
                     sq -= queen_moves[i];
                 }
@@ -1435,43 +1389,6 @@ int fully_legal_moves(Piece board[], ExtraGameInfo *game_data, Move legal[], sho
     return count;
 }
 
-short absolute_eval_mg(Piece board[], ExtraGameInfo* game_data) {
-    int i, piece;
-    short score = 0;
-    short piece_allegiance;
-    for (i = 0; i < 128; i++) {
-        if (i & 0x88) {
-            i += 7;
-            continue;
-        }
-        if (!board[i]) continue;
-        piece = abs(board[i]);
-        piece_allegiance = SIGN(board[i]);
-        score += piece_allegiance * piece_values[piece];
-        score += piece_allegiance * mg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
-    }
-
-    return score;
-}
-
-short absolute_eval_eg(Piece board[], ExtraGameInfo* game_data) {
-    int i, piece;
-    short score = 0;
-    short piece_allegiance;
-    for (i = 0; i < 128; i++) {
-        if (i & 0x88) {
-            i += 7;
-            continue;
-        }
-        if (!board[i]) continue;
-        piece = abs(board[i]);
-        piece_allegiance = SIGN(board[i]);
-        score += piece_allegiance * eg_table_atlas[piece][(piece_allegiance == 1) ? TO_6BIT(i) : TO_6BIT_C(i)];
-    }
-
-    return score;
-}
-
 #define STAND_PAT(GAMEDATA) ((GAMEDATA->mg_eval + ((GAMEDATA->phase * GAMEDATA->eg_modifier) >> 8)) + GAMEDATA->white_pawn_score - GAMEDATA->black_pawn_score)
 
 short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, short depth, char side, short exts_applied) {
@@ -1570,7 +1487,6 @@ short minimax(
     Move best_move;
     Undo u;
     Move child_pv[MAX_DEPTH] = {0};
-    char status_buf[16];
     int in_check, is_capture;
     int num_ordered_moves;
     char top_level = (depth == init_depth);
@@ -1635,10 +1551,6 @@ short minimax(
     max = -oo;
 
     for (i = 0; i < moves_count; i++) {
-        if (depth == MAX_DEPTH && ext_left == init_ext) {
-            sprintf(status_buf, " %2d%s", (90 * ((i < LATE_MOVE_THRESHOLD) ? 10 * i : 10 * LATE_MOVE_THRESHOLD + (i - LATE_MOVE_THRESHOLD))) / (moves_count + 9 * num_ordered_moves) + 10, "%");
-        }
-
         is_capture = (board[DECODE_DEST(moves[i])]);
 
         make_move(board, game_data, &moves[i], &u, 1);
@@ -1836,7 +1748,7 @@ unsigned char _decode_castling(unsigned char castling) {
 }
 
 // Translates some data into what the actual engine uses; moves, for example.
-extern "C" EMSCRIPTEN_KEEPALIVE void engine(Piece board[], IExtraGameInfo* game_data) {
+extern "C" ENGINE_EXPORT void engine(Piece board[], IExtraGameInfo* game_data) {
     static ExtraGameInfo egi;
     egi.castling = _encode_castling(game_data->castling);
 
@@ -1852,6 +1764,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void engine(Piece board[], IExtraGameInfo* game_
         egi.white_pawn_score = 0;
         egi.black_pawn_score = 0;
         egi.phase = 0;
+        compute_hash(board, egi);
         init_eval(board, &egi);
     }
     init = true;
@@ -1862,5 +1775,3 @@ extern "C" EMSCRIPTEN_KEEPALIVE void engine(Piece board[], IExtraGameInfo* game_
     else game_data->ep_square = DECODE(egi.ep_square);
     game_data->castling = _decode_castling(egi.castling);
 }
-
-#endif // __EMSCRIPTEN__
