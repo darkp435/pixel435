@@ -43,6 +43,9 @@
 // - Fixed several major bugs concerning the chess engine and it
 //   half-works now. Yippee!
 // - Code is definitely due for a refactor
+// 25/07
+// - Fixed Queen and Rook jumping over pieces like a kangaroo
+// - Pushed to "production" if you could call it that
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 // const metalPipe = document.getElementById("metal-pipe") as HTMLAudioElement
