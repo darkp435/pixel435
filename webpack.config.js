@@ -13,7 +13,7 @@ const entries = {
   rng: './src/rng.ts',
   users: './src/users.ts',
   minesweeper: './src/minesweeper.ts',
-  'lobotomy-chess': './src/lobotomy-chess.ts'
+  'lobotomy-chess': './src/lobotomy-chess.ts',
 };
 
 const htmlPages = [

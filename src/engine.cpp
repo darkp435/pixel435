@@ -72,8 +72,8 @@
 #define MAX_Q_DEPTH 6
 #define TT_SIZE 1024
 #else
-#define MAX_DEPTH 8
-#define MAX_Q_DEPTH 8
+#define MAX_DEPTH 10
+#define MAX_Q_DEPTH 10
 #define TT_SIZE 65536
 #endif // BOOSTED
 

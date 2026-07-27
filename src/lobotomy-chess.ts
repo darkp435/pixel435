@@ -47,24 +47,27 @@
 // - Fixed Queen and Rook jumping over pieces like a kangaroo
 // - Pushed to "production" if you could call it that
 
-const chessBoard = document.getElementById("chess-board") as HTMLDivElement
-// const metalPipe = document.getElementById("metal-pipe") as HTMLAudioElement
+// Needed for is_in_check which doesn't have to share memory
 import createModule from "./engine.js"
 const Wasm = await createModule()
+
+const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 let botsTurn = false
 let boardRotationDeg = 0
+
+const engineWorker = new Worker(
+    new URL("./engine-worker.ts", import.meta.url),
+    { type: "module" }
+);
 
 const iceDaggerInterval = 25
 const horseAmount = 5
 const scotlandFlagClearDuration = 10000
 
-const castlingOffset = Wasm._get_offset(cString("castling"))
-const epSquareOffset = Wasm._get_offset(cString("ep_square"))
-const whiteKingSqOffset = Wasm._get_offset(cString("white_king_sq"))
-const blackKingSqOffset = Wasm._get_offset(cString("black_king_sq"))
-
 const width = window.innerWidth
 const height = window.innerHeight
+
+const turnNotifier = document.getElementById("turn-notifier") as HTMLParagraphElement
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -79,41 +82,6 @@ class GridCoord {
 /**  Returns the absolute difference between two numbers. */
 function difference(a: number, b: number) {
     return Math.abs(a - b)
-}
-
-/** Unpacks the 0x88 chess board into normal form and returns it. */
-function unpackGrid(boardPtr: number) {
-    // Values don't matter but null just to be safe
-    const newBoard = [
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null]
-    ]
-
-    let index = 0
-
-    // Iterate our way downwards because for his board's first index is a8, not a1
-    for (let row = 7; row > -1; row--) {
-        for (let col = 0; col < 8; col++) {
-            const val = Wasm.getValue(boardPtr + index, "i8")
-            if (val === 0) newBoard[row][col] = null
-            else newBoard[row][col] = val
-            index++
-        }
-        index += 8
-    }
-
-    return newBoard
-}
-
-/** Does the opposite of compact function: extracts the two integers */
-function uncompact(byte: number) {
-    return [byte >> 4, byte & 0xf]
 }
 
 // Values assigned to be compatible with engine.cpp
@@ -224,18 +192,16 @@ class Board {
     }
 
     executeEngine() {
+        botsTurn = true
         const params = this.getRequiredBotInfo()
-        const boardPtr = params[0]
-        const egiPtr = params[1]
-        Wasm._engine(boardPtr, egiPtr)
-        this.grid = unpackGrid(boardPtr)
-        const castleUnpacked = uncompact(Wasm.getValue(egiPtr + castlingOffset, "i8"))
-        this.castle = castleUnpacked[0]
-        this.blackCastle = castleUnpacked[1]
-        const epSquare = uncompact(Wasm.getValue(egiPtr + epSquareOffset, "i8"))
-        this.enPassant = new GridCoord(epSquare[0], epSquare[1])
-        Wasm._free(boardPtr)
-        Wasm._free(egiPtr)
+        engineWorker.postMessage(params)
+    }
+
+    engineCleanup(data: ((ChessPiece | null)[][] | number[])[]) {
+        this.grid = data[0] as (ChessPiece | null)[][]
+        this.castle = data[1][0] as number
+        this.blackCastle = data[1][0] as number
+        this.enPassant = new GridCoord(data[2][0] as number, data[2][1] as number)
         this.redraw()
     }
 
@@ -243,9 +209,7 @@ class Board {
         document.querySelector(".promotion")!.remove()
         this.setPiece(coord, pieceType)
         document.getElementById(`${coord.row}-${coord.col}`)!.style.backgroundImage = `url(${pieceToDisplay(pieceType)})`
-        botsTurn = true
         this.executeEngine()
-        botsTurn = false
     }
 
     private _promote(coord: GridCoord) {
@@ -393,7 +357,7 @@ class Board {
         } else {
             // Moving forwards
             if (to.row > from.row) {
-                for (let i = from.row; i < to.row; i++) {
+                for (let i = from.row + 1; i < to.row; i++) {
                     if (this.getPiece(i, from.col) !== null) return false
                 }
             } else {
@@ -703,9 +667,7 @@ class Board {
         if (pieceType === ChessPiece.WPawn && to.row === 7) {
             this._promote(to)
         } else {
-            botsTurn = true
             this.executeEngine()
-            botsTurn = false
         }
 
         // console.log(this.getPiece(0, 4));
@@ -733,29 +695,18 @@ class Board {
 
     getRequiredBotInfo() {
         const boardBytes = this.chessBoardTo88()
-        const boardPtr = Wasm._malloc(128)
-        Wasm.HEAP8.set(boardBytes, boardPtr)
-        const total = cString("TOTAL_SIZE")
-        const egiPtr = Wasm._malloc(Wasm._get_offset(total))
-        Wasm._free(total)
-        Wasm.setValue(egiPtr + castlingOffset, compact(this.castle, this.blackCastle), "i8")
-        if (this.enPassant === null) Wasm.setValue(egiPtr + epSquareOffset, 0, "i8")
-        else Wasm.setValue(egiPtr + epSquareOffset, this.gridCoordToSquare(this.enPassant), "i8")
-        Wasm.setValue(egiPtr + whiteKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.WKing)), "i8")
-        Wasm.setValue(egiPtr + blackKingSqOffset, this.gridCoordToSquare(this.search(ChessPiece.BKing)), "i8")
-        return [boardPtr, egiPtr]
+        return [
+            boardBytes, 
+            compact(this.castle, this.blackCastle), 
+            this.enPassant === null ? 0 : this.gridCoordToSquare(this.enPassant),
+            this.gridCoordToSquare(this.search(ChessPiece.WKing)),
+            this.gridCoordToSquare(this.search(ChessPiece.BKing))
+        ]
     }
 }
 
 function randint(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function cString(str: string) {
-    const size = Wasm.lengthBytesUTF8(str) + 1
-    const ptr = Wasm._malloc(size)
-    Wasm.stringToUTF8(str, ptr, size)
-    return ptr
 }
 
 console.log("Dev version 4")
@@ -873,4 +824,13 @@ domBoard.addEventListener('click', (event) => {
     }
 })
 
-document.getElementById("accept")!.onclick = () => document.querySelector(".overlay")?.remove()
+document.getElementById("accept")!.onclick = () => {
+    document.querySelector(".overlay")!.remove()
+    turnNotifier.style.display = "block"
+}
+
+engineWorker.onmessage = (event) => {
+    console.log("Received")
+    board.engineCleanup(event.data)
+    botsTurn = false
+}

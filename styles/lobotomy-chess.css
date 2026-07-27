@@ -148,3 +148,8 @@ img {
         transform: translateY(100vh);
     }
 }
+
+#turn-notifier {
+    position: absolute;
+    top: 2rem;
+}
