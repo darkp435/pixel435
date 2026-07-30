@@ -32,3 +32,6 @@ src/users.js
 src/engine.js
 src/engine.wasm
 src/engine.d.ts
+src/engine-boosted.js
+src/engine-boosted.d.ts
+src/engine-boosted.wasm

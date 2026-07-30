@@ -30,14 +30,6 @@
 #include <cstddef>
 #include <string>
 
-// The following macro determines if the engine is being ran at it's original strength, or its
-// boosted strength by changing some of the macros defined later in this file. If it's boosted, the
-// chess engine will take significantly longer to "think", but plays better than its unboosted
-// version. For purposes of this website, it's recommended to **NOT** enable this flag as it is not
-// being ran in a Web Worker (as of writing this) which means it freezes the entire DOM. This is
-// just an experimental option.
-#define BOOSTED 0
-
 #define WP               1
 #define WN               2
 #define WB               3
@@ -67,11 +59,12 @@
 
 // The MAX_DEPTH and MAX_Q_DEPTH macros dictate how good the chess engine is.
 // Time increases exponentially as they are incremented.
-#if !BOOSTED
+#ifndef BOOSTED
 #define MAX_DEPTH   6
 #define MAX_Q_DEPTH 6
 #define TT_SIZE 1024
 #else
+#undef BOOSTED
 #define MAX_DEPTH 10
 #define MAX_Q_DEPTH 10
 #define TT_SIZE 65536
@@ -113,7 +106,7 @@
 #define HISTORY_MAX 8192
 #define HISTORY_MAX_SHIFT 13
 #define HISTORY_DECAY_SHIFT 14
-#define TT_MASK 1023
+#define TT_MASK TT_SIZE - 1
 #define KILLERS_COUNT 3
 #define TT_FLAG_EXACT 0
 #define TT_FLAG_LOWER 1

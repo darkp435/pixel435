@@ -47,9 +47,13 @@
 // - Fixed Queen and Rook jumping over pieces like a kangaroo
 // - Pushed to "production" if you could call it that
 
+import { MainModule } from "./engine";
+
 // Needed for is_in_check which doesn't have to share memory
-import createModule from "./engine.js"
-const Wasm = await createModule()
+// import createModule from "./engine.js"
+// const Wasm = await createModule()
+let Wasm: MainModule
+let boosted: boolean
 
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 let botsTurn = false
@@ -700,7 +704,8 @@ class Board {
             compact(this.castle, this.blackCastle), 
             this.enPassant === null ? 0 : this.gridCoordToSquare(this.enPassant),
             this.gridCoordToSquare(this.search(ChessPiece.WKing)),
-            this.gridCoordToSquare(this.search(ChessPiece.BKing))
+            this.gridCoordToSquare(this.search(ChessPiece.BKing)),
+            boosted
         ]
     }
 }
@@ -824,9 +829,21 @@ domBoard.addEventListener('click', (event) => {
     }
 })
 
-document.getElementById("accept")!.onclick = () => {
+document.getElementById("default")!.onclick = () => {
     document.querySelector(".overlay")!.remove()
     turnNotifier.style.display = "block"
+    import("./engine.js").then(module => {
+        module.default().then(wasm => Wasm = wasm)
+        boosted = false
+    })
+}
+
+document.getElementById("boosted")!.onclick = () => {
+    document.querySelector(".overlay")!.remove()
+    import("./engine-boosted.js").then(module => {
+        module.default().then(wasm => Wasm = wasm)
+        boosted = true
+    })
 }
 
 engineWorker.onmessage = (event) => {

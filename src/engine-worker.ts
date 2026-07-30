@@ -1,11 +1,14 @@
-import createModule from "./engine.js"
-const Wasm = await createModule()
+import { MainModule } from "./engine"
 
-const castlingOffset = Wasm._get_offset(cString("castling"))
-const epSquareOffset = Wasm._get_offset(cString("ep_square"))
-const whiteKingSqOffset = Wasm._get_offset(cString("white_king_sq"))
-const blackKingSqOffset = Wasm._get_offset(cString("black_king_sq"))
-const total = Wasm._get_offset(cString("TOTAL_SIZE"))
+// import createModule, { MainModule } from "./engine.js"
+let Wasm: MainModule
+// const Wasm = await createModule()
+
+let epSquareOffset: number
+let castlingOffset: number
+let whiteKingSqOffset: number
+let blackKingSqOffset: number
+let total: number
 
 /** Does the opposite of compact function: extracts the two integers */
 function uncompact(byte: number) {
@@ -49,10 +52,37 @@ function cString(str: string) {
     return ptr
 }
 
-self.onmessage = (event) => {
+self.onmessage = async (event) => {
     console.log("Called")
     const data = event.data
     const boardBytes = data[0]
+    if (Wasm === undefined) {
+        // import(event.data[5] ? "./engine-boosted.js" : "./engine.js").then(module => {
+        //     module.default().then(wasm as MainModule => Wasm = wasm)
+        // })
+        if (event.data[5]) {
+            const module = await import("./engine-boosted.js")
+            Wasm = await module.default()
+            // import("./engine-boosted.js").then(module => {
+            //     module.default().then(wasm => Wasm = wasm)
+            // })
+        } else {
+            const module = await import("./engine.js")
+            Wasm = await module.default()
+            // import("./engine.js").then(module => {
+            //     module.default().then(wasm => Wasm = wasm)
+            // })
+        }
+    }
+
+    if (castlingOffset === undefined) {
+        castlingOffset = Wasm._get_offset(cString("castling"))
+        epSquareOffset = Wasm._get_offset(cString("ep_square"))
+        whiteKingSqOffset = Wasm._get_offset(cString("white_king_sq"))
+        blackKingSqOffset = Wasm._get_offset(cString("black_king_sq"))
+        total = Wasm._get_offset(cString("TOTAL_SIZE"))
+    }
+
     const boardPtr = Wasm._malloc(128)
     Wasm.HEAP8.set(boardBytes, boardPtr)
 
