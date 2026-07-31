@@ -18,7 +18,11 @@
 #include <emscripten.h>
 #define ENGINE_EXPORT EMSCRIPTEN_KEEPALIVE
 #elif defined(__clang__) || defined(__GNUC__)
+#ifndef EXPORT_AS_DLL
 #define ENGINE_EXPORT __attribute__((used))
+#else
+#define ENGINE_EXPORT __declspec(dllexport)
+#endif // EXPORT_AS_DLL
 #elif defined(_MSC_VER)
 #define ENGINE_EXPORT __declspec(dllexport)
 #else
@@ -29,6 +33,7 @@
 #include <string.h>
 #include <cstddef>
 #include <string>
+#include <cstdint>
 
 #define WP               1
 #define WN               2
