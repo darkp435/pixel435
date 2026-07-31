@@ -227,25 +227,25 @@ class Board {
         document.body.appendChild(promotionBox)
 
         const queen = document.createElement("img")
-        queen.src = "../assets/white-queen.png"
+        queen.src = "./assets/white-queen.png"
         queen.alt = "Q"
         queen.onclick = () => this._promotionHandler(coord, ChessPiece.WQueen)
         promotionBox.appendChild(queen)
 
         const rook = document.createElement("img")
-        rook.src = "../assets/white-rook.png"
+        rook.src = "./assets/white-rook.png"
         rook.alt = "R"
         rook.onclick = () => this._promotionHandler(coord, ChessPiece.WRook)
         promotionBox.appendChild(rook)
 
         const knight = document.createElement("img")
-        knight.src = "../assets/white-knight.png"
+        knight.src = "./assets/white-knight.png"
         knight.alt = "N"
         knight.onclick = () => this._promotionHandler(coord, ChessPiece.WKnight)
         promotionBox.appendChild(knight)
 
         const bishop = document.createElement("img")
-        bishop.src = "../assets/white-bishop.png"
+        bishop.src = "./assets/white-bishop.png"
         bishop.alt = "B"
         bishop.onclick = () => this._promotionHandler(coord, ChessPiece.WBishop)
         promotionBox.appendChild(bishop)
@@ -567,7 +567,7 @@ class Board {
         const pieceType = this.getPiece(from)
 
         if (!this.isLegalMove(from, to)) {
-            new Audio("../assets/vine-boom.mp3").play()
+            new Audio("./assets/vine-boom.mp3").play()
             return
         }
 
@@ -583,7 +583,7 @@ class Board {
             document.body.style.backgroundImage = `linear-gradient(to right, ${startColor} 0%, ${midColor} 50%, ${endColor} 100%)`
             boardRotationDeg += randint(5, 45)
             chessBoard.style.transform = `rotate(${boardRotationDeg}deg)`
-            const metalPipe = new Audio("../assets/metal-pipe.mp3")
+            const metalPipe = new Audio("./assets/metal-pipe.mp3")
             metalPipe.play()
         }
         if (pieceType === ChessPiece.WQueen) {
@@ -607,18 +607,18 @@ class Board {
                 iceDaggerList.push(iceDagger)
                 document.body.appendChild(iceDagger)
             }, iceDaggerInterval);
-            const iceDaggerSfx = new Audio("../assets/ice-dagger.mp3")
+            const iceDaggerSfx = new Audio("./assets/ice-dagger.mp3")
             iceDaggerSfx.play()
         }
 
         if (pieceType === ChessPiece.WBishop) {
-            document.body.style.backgroundImage = "url('../assets/scotland.png')"
-            const scotlandForever = new Audio("../assets/scotland-forever.mp3")
+            document.body.style.backgroundImage = "url('./assets/scotland.png')"
+            const scotlandForever = new Audio("./assets/scotland-forever.mp3")
             const overlappedElements: HTMLImageElement[] = []
             scotlandForever.play()
             for (let _ = 0; _ < randint(30, 60); _++) {
                 const scotland = document.createElement("img")
-                scotland.src = "../assets/scotland.png"
+                scotland.src = "./assets/scotland.png"
                 scotland.style.width = `${randint(50, 100)}px`
                 scotland.style.height = `${randint(20, 75)}px`
                 scotland.style.position = "absolute"
@@ -635,7 +635,7 @@ class Board {
         }
 
         if (pieceType === ChessPiece.WRook) {
-            const theRook = new Audio("../assets/the-rook.mp3")
+            const theRook = new Audio("./assets/the-rook.mp3")
             theRook.play()
             document.querySelectorAll(".chess-button").forEach((el) => {
                 if (!(el instanceof HTMLElement)) return
@@ -645,10 +645,10 @@ class Board {
         }
 
         if (pieceType === ChessPiece.WKing) {
-            const hobbitsToIsengard = new Audio("../assets/hobbits-isengard.mp3")
+            const hobbitsToIsengard = new Audio("./assets/hobbits-isengard.mp3")
             hobbitsToIsengard.play()
             const dvd = document.createElement("img")
-            dvd.src = "../assets/dvd.png"
+            dvd.src = "./assets/dvd.png"
             dvd.classList.add("dvd")
             dvd.style.left = `${randint(0, width)}px`
             document.body.appendChild(dvd)
@@ -658,12 +658,12 @@ class Board {
             for (let _ = 0; _ < horseAmount; _++) {
                 const horse = document.createElement("img")
                 horse.style.top = `${randint(0, height)}px`
-                horse.src = "../assets/horse.png"
+                horse.src = "./assets/horse.png"
                 horse.classList.add("horse")
                 document.body.appendChild(horse)
                 horse.addEventListener("animationend", () => horse.remove())
             }
-            const horseNeigh = new Audio("../assets/horse.mp3")
+            const horseNeigh = new Audio("./assets/horse.mp3")
             horseNeigh.play()
         }
 
@@ -723,29 +723,29 @@ const _chessPieceMap = new Map<ChessPiece, string>()
 function pieceToDisplay(piece: ChessPiece | null) {
     if (!_chessPieceMap.size) {
         // Should be an image of a black pawn on a chessboard
-        _chessPieceMap.set(ChessPiece.WPawn, "../assets/white-pawn.png")
+        _chessPieceMap.set(ChessPiece.WPawn, "./assets/white-pawn.png")
         // Should be an image of a Scottish castle
-        _chessPieceMap.set(ChessPiece.WBishop, "../assets/white-bishop.png")
+        _chessPieceMap.set(ChessPiece.WBishop, "./assets/white-bishop.png")
         // Should be a Microsoft Paint drawn art that remotely resembles a bishop
-        _chessPieceMap.set(ChessPiece.WRook, "../assets/white-rook.png")
+        _chessPieceMap.set(ChessPiece.WRook, "./assets/white-rook.png")
         // Should be an image of Cassie, an NPC from the Roblox game Block Tales
-        _chessPieceMap.set(ChessPiece.WQueen, "../assets/white-queen.png")
+        _chessPieceMap.set(ChessPiece.WQueen, "./assets/white-queen.png")
         // Should be an image of a white horse
-        _chessPieceMap.set(ChessPiece.WKnight, "../assets/white-knight.png")
+        _chessPieceMap.set(ChessPiece.WKnight, "./assets/white-knight.png")
         // Should be an image of Aragorn, a character from Lord of the Rings
-        _chessPieceMap.set(ChessPiece.WKing, "../assets/white-king.png")
+        _chessPieceMap.set(ChessPiece.WKing, "./assets/white-king.png")
         // Should be an image of a black pawn on a chessboard
-        _chessPieceMap.set(ChessPiece.BPawn, "../assets/black-pawn.png")
+        _chessPieceMap.set(ChessPiece.BPawn, "./assets/black-pawn.png")
         // Should be an image of a brown horse
-        _chessPieceMap.set(ChessPiece.BKnight, "../assets/black-knight.png")
+        _chessPieceMap.set(ChessPiece.BKnight, "./assets/black-knight.png")
         // Should be the inverted image of the aforementioned white bishop
-        _chessPieceMap.set(ChessPiece.BBishop, "../assets/black-bishop.png")
+        _chessPieceMap.set(ChessPiece.BBishop, "./assets/black-bishop.png")
         // Should be the inverted image of the aforementioned white rook
-        _chessPieceMap.set(ChessPiece.BRook, "../assets/black-rook.png")
+        _chessPieceMap.set(ChessPiece.BRook, "./assets/black-rook.png")
         // Should be the inverted, and quality-reduced image of the aforementioned white queen
-        _chessPieceMap.set(ChessPiece.BQueen, "../assets/black-queen.png")
+        _chessPieceMap.set(ChessPiece.BQueen, "./assets/black-queen.png")
         // Should be the inverted image of the aforementioned white king
-        _chessPieceMap.set(ChessPiece.BKing, "../assets/black-king.png")
+        _chessPieceMap.set(ChessPiece.BKing, "./assets/black-king.png")
     }
     if (piece === null) {
         return ""
@@ -823,7 +823,7 @@ domBoard.addEventListener('click', (event) => {
             board.move(selectedElement, coord)
         } else {
             selectedElement = coord
-            const clickSfx = new Audio("../assets/error.mp3")
+            const clickSfx = new Audio("./assets/error.mp3")
             clickSfx.play()
         }
     }
