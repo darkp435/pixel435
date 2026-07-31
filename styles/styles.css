@@ -612,7 +612,7 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 h1 {
     color: #FFFFFF;
-    font-family: 'Nunito';
+    font-family: 'Inconsolata';
     font-size: 45px;
     margin-top: 0px;
     margin-bottom: 3px;
@@ -630,10 +630,11 @@ p {
 }
 
 a {
-    font-family: 'Nunito';
+    font-family: 'Inconsolata';
     color: #00FF00;
     filter: brightness(85%);
     font-size: 14px;
+    text-decoration: underline;
 }
 
 a:hover {
@@ -684,8 +685,9 @@ th, td {
 }
 
 .redirect {
-    font-family: 'Overpass';
+    font-family: 'Inconsolata', monospace;
     font-size: 12px;
+    text-decoration: underline;
 }
 
 input {
@@ -696,10 +698,11 @@ input {
 
 .info {
     margin-bottom: 15px;
+    text-decoration: underline;
 }
 
 .desmosketch {
-    font-family: 'Nunito';
+    font-family: 'Inconsolata';
     color: #00FF00;
     filter: brightness(85%);
     font-size: 14px;
@@ -800,7 +803,11 @@ div {
     margin: 4px;
     border-radius: 5px;
     cursor: pointer;
-    font-family: 'Nunito'
+    font-family: 'Inconsolata'
+}
+
+.subheading {
+    
 }
 
 .hover\:bg-blue-700:hover {

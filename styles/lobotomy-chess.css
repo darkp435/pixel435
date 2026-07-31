@@ -124,7 +124,7 @@ img {
     display: block;
     width: 6rem;
     height: 2rem;
-    margin: 0 auto;
+    margin: 0;
     border: 1px solid #000000;
     border-radius: 2px;
 }
@@ -147,4 +147,15 @@ img {
     to {
         transform: translateY(100vh);
     }
+}
+
+#turn-notifier {
+    position: absolute;
+    top: 2rem;
+}
+
+#button-container {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
 }
