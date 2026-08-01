@@ -11,8 +11,8 @@
 //   BUILD_INSTRUCTIONS.md at the root directory of this project for compilation instructions.
 // - The original program featured a halfmove clock, but it has been removed in this program
 //   due to the extra hassle and not yielding much benefit.
-// - The ELO of this chess engine is approximately 1800, though it has not been benchmarked.
-//   See BOOSTED macro below for more information.
+// - The ELO of this chess engine is approximately 1800, though it has not been benchmarked,
+//   when ran in its normal settings. The ELO of the boosted version is unknown.
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
@@ -255,6 +255,15 @@ constexpr Square sq_tbl_c[128] = {
     8,  9,  10, 11, 12, 13, 14, 15, 0,  0,  0,  0,  0,  0,  0,  0,
     0,  1,  2,  3,  4,  5,  6,  7,  0,  0,  0,  0,  0,  0,  0,  0
 };
+
+// Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
+unsigned char _translate_square(unsigned char square) {
+    uint8_t col = square & 0xf;
+    uint8_t row = square >> 4;
+    unsigned char res = col;
+    res += ((7 - row) * 0x10);
+    return TO_6BIT(res);
+}
 
 constexpr char mg_pawn_table[64] = {
      0,  0,  0,  0,  0,  0,  0,  0,
@@ -858,11 +867,7 @@ int _is_in_check(Piece board[], char side, Square king_sq) {
 // Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
 // king_sq is provided as 4 bits to the row and the other 4 bits to the column
 extern "C" ENGINE_EXPORT int is_in_check(Piece board[], char side, unsigned char king_sq) {
-    uint8_t row = king_sq >> 4;
-    uint8_t col = king_sq & 0xf;
-    unsigned char res = col;
-    res += ((7 - row) * 0x10);
-    return _is_in_check(board, side, res);
+    return _is_in_check(board, side, _translate_square(king_sq));
 }
 
 int parse_check(Piece board[], char side, Square king_sq, HalfBitboard* block_bitboard_high, HalfBitboard* block_bitboard_low) {
@@ -1694,15 +1699,6 @@ unsigned char _encode_castling(unsigned char castling) {
     return new_rights;
 }
 
-// Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
-unsigned char _translate_square(unsigned char square) {
-    uint8_t col = square & 0xf;
-    uint8_t row = square >> 4;
-    unsigned char res = col;
-    res += ((7 - row) * 0x10);
-    return TO_6BIT(res);
-}
-
 // Packs row and col into one integer
 constexpr unsigned char _pack(unsigned char row, unsigned char col) {
     return (row << 4) | col;
@@ -1745,8 +1741,20 @@ unsigned char _decode_castling(unsigned char castling) {
     return _pack(white, black);
 }
 
+bool same_board(Piece* first, Piece* second) {
+    for (short i = 0; i < 128; i++) {
+        if (first[i] != second[i]) return false;
+    }
+
+    return true;
+}
+
+#define NOTHING 0
+#define CHECKMATE 1
+#define DRAW 2
+
 // Translates some data into what the actual engine uses; moves, for example.
-extern "C" ENGINE_EXPORT void engine(Piece board[], IExtraGameInfo* game_data) {
+extern "C" ENGINE_EXPORT char engine(Piece board[], IExtraGameInfo* game_data) {
     static ExtraGameInfo egi;
     egi.castling = _encode_castling(game_data->castling);
 
@@ -1765,9 +1773,19 @@ extern "C" ENGINE_EXPORT void engine(Piece board[], IExtraGameInfo* game_data) {
         compute_hash(board, egi);
         init_eval(board, &egi);
     }
+
     init = true;
     static Undo undo;
+    Piece board_copy[128];
+    std::copy(board, board + 128, board_copy);
+
     _engine(board, &egi, &undo);
+
+    // Either draw or checkmate
+    if (same_board(board_copy, board)) {
+        if (_is_in_check(board, BLACK, _translate_square(game_data->black_king_sq))) return CHECKMATE;
+        return DRAW;
+    }
     // 128 indicates that there is no ep square
     if (egi.ep_square == 128) game_data->ep_square = _pack(8, 8);
     else game_data->ep_square = DECODE(egi.ep_square);
