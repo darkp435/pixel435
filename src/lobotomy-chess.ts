@@ -714,7 +714,7 @@ function randint(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-console.log("Dev version 4")
+console.log("Dev version 5")
 const board = new Board()
 
 // Use pieceToDisplay instead of _chessPieceMap!

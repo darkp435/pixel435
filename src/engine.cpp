@@ -30,7 +30,6 @@
 #endif
 
 #include <stdlib.h>
-#include <string.h>
 #include <cstddef>
 #include <string>
 #include <cstdint>
@@ -120,6 +119,8 @@
 #define ZOBRIST_CASTLE(rights) (rights * 0x85ebca6bu)
 #define ZOBRIST_EP(ep_square) ((ep_square + 1) * 0xc2b2ae35u)
 
+namespace {
+
 using Piece = char;
 using Move = unsigned short;
 using Square = unsigned char;
@@ -164,63 +165,6 @@ struct Undo {
     short eg_modifier;
     Zobrist hash;
 }; // Size: 33 bytes
-
-#pragma region Offset calculations
-// ------------------------------ WebAssembly Helper ------------------------------
-// These are functions not part of the chess engine and wrote by a different person
-// than the person who wrote this chess engine. It contains the helper function
-// get_offset to return necessary padding for the TS/JS side of WebAssembly.
-
-// The real ExtraGameInfo struct contains a bunch of stuff that can be evaluated
-// by the engine() function, and exposing it would be unnecessary and very annoying
-// for the TS side, so we instead expect this to be passed.
-struct IExtraGameInfo {
-    unsigned char castling;
-    unsigned char ep_square;
-    unsigned char white_king_sq;
-    unsigned char black_king_sq;
-};
-
-#define UNDO_OFFSETOF(x) offsetof(Undo, x)
-#define EGI_OFFSETOF(x) offsetof(IExtraGameInfo, x)
-
-struct Entry {
-    std::string_view name;
-    size_t bytes;
-};
-
-constexpr Entry EGIOffsets[] = {
-    {"TOTAL_SIZE", sizeof(ExtraGameInfo)},
-    {"castling", EGI_OFFSETOF(castling)},
-    {"ep_square", EGI_OFFSETOF(ep_square)},
-    {"black_king_sq", EGI_OFFSETOF(black_king_sq)},
-    {"white_king_sq", EGI_OFFSETOF(white_king_sq)},
-    {"_null", 0}
-};
-
-size_t lookup(const Entry table[], std::string_view member) {
-    char index = 0;
-    Entry entry = table[index];
-    while (entry.name != "_null") {
-        if (entry.name == member) return entry.bytes;
-        index++;
-        entry = table[index];
-    }
-    return static_cast<size_t>(-1);
-}
-
-/**
- * Returns the offset of a class member.
- * @param class_name The name of the C struct the member is queried from. It can either be Undo, Metrics, or ExtraGameInfo.
- * @param member The member that you wish to get the offset of.
- * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
- */
-extern "C" ENGINE_EXPORT size_t get_offset(const char* member) {
-    return lookup(EGIOffsets, member);
-}
-
-// Back to C89 we go, lads!
-#pragma endregion
 
 #pragma region Chess Engine
 
@@ -862,12 +806,6 @@ int _is_in_check(Piece board[], char side, Square king_sq) {
     }
 
     return 0;
-}
-
-// Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
-// king_sq is provided as 4 bits to the row and the other 4 bits to the column
-extern "C" ENGINE_EXPORT int is_in_check(Piece board[], char side, unsigned char king_sq) {
-    return _is_in_check(board, side, _translate_square(king_sq));
 }
 
 int parse_check(Piece board[], char side, Square king_sq, HalfBitboard* block_bitboard_high, HalfBitboard* block_bitboard_low) {
@@ -1749,12 +1687,79 @@ bool same_board(Piece* first, Piece* second) {
     return true;
 }
 
+} // namespace
+
 #define NOTHING 0
 #define CHECKMATE 1
 #define DRAW 2
 
+typedef char TurnResult;
+
+#pragma region Offset calculations
+// ------------------------------ WebAssembly Helper ------------------------------
+// These are functions not part of the chess engine and wrote by a different person
+// than the person who wrote this chess engine. It contains the helper function
+// get_offset to return necessary padding for the TS/JS side of WebAssembly.
+
+// The real ExtraGameInfo struct contains a bunch of stuff that can be evaluated
+// by the engine() function, and exposing it would be unnecessary and very annoying
+// for the TS side, so we instead expect this to be passed.
+struct IExtraGameInfo {
+    unsigned char castling;
+    unsigned char ep_square;
+    unsigned char white_king_sq;
+    unsigned char black_king_sq;
+};
+
+#define UNDO_OFFSETOF(x) offsetof(Undo, x)
+#define EGI_OFFSETOF(x) offsetof(IExtraGameInfo, x)
+
+struct Entry {
+    std::string_view name;
+    size_t bytes;
+};
+
+constexpr Entry EGIOffsets[] = {
+    {"TOTAL_SIZE", sizeof(ExtraGameInfo)},
+    {"castling", EGI_OFFSETOF(castling)},
+    {"ep_square", EGI_OFFSETOF(ep_square)},
+    {"black_king_sq", EGI_OFFSETOF(black_king_sq)},
+    {"white_king_sq", EGI_OFFSETOF(white_king_sq)},
+    {"_null", 0}
+};
+
+size_t lookup(const Entry table[], std::string_view member) {
+    char index = 0;
+    Entry entry = table[index];
+    while (entry.name != "_null") {
+        if (entry.name == member) return entry.bytes;
+        index++;
+        entry = table[index];
+    }
+    return static_cast<size_t>(-1);
+}
+
+/**
+ * Returns the offset of a class member.
+ * @param class_name The name of the C struct the member is queried from. It can either be Undo, Metrics, or ExtraGameInfo.
+ * @param member The member that you wish to get the offset of.
+ * @returns Offset, in bytes, of the member. If the member is not valid, returns -1 casted to size_t.
+ */
+extern "C" ENGINE_EXPORT size_t get_offset(const char* member) {
+    return lookup(EGIOffsets, member);
+}
+
+#pragma endregion
+
+// Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
+// king_sq is provided as 4 bits to the row and the other 4 bits to the column
+extern "C" ENGINE_EXPORT int is_in_check(Piece board[], char side, unsigned char king_sq) {
+    return _is_in_check(board, side, _translate_square(king_sq));
+}
+
 // Translates some data into what the actual engine uses; moves, for example.
-extern "C" ENGINE_EXPORT char engine(Piece board[], IExtraGameInfo* game_data) {
+extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_data) {
+    // printf("Engine\n");
     static ExtraGameInfo egi;
     egi.castling = _encode_castling(game_data->castling);
 
@@ -1786,8 +1791,10 @@ extern "C" ENGINE_EXPORT char engine(Piece board[], IExtraGameInfo* game_data) {
         if (_is_in_check(board, BLACK, _translate_square(game_data->black_king_sq))) return CHECKMATE;
         return DRAW;
     }
+
     // 128 indicates that there is no ep square
     if (egi.ep_square == 128) game_data->ep_square = _pack(8, 8);
     else game_data->ep_square = DECODE(egi.ep_square);
     game_data->castling = _decode_castling(egi.castling);
+    return NOTHING;
 }
