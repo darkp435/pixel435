@@ -201,7 +201,8 @@ class Board {
         engineWorker.postMessage(params)
     }
 
-    engineCleanup(data: ((ChessPiece | null)[][] | number[])[]) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    engineCleanup(data: any) {
         this.grid = data[0] as (ChessPiece | null)[][]
         this.castle = data[1][0] as number
         this.blackCastle = data[1][0] as number
@@ -847,7 +848,7 @@ document.getElementById("boosted")!.onclick = () => {
 }
 
 engineWorker.onmessage = (event) => {
-    console.log("Received")
+    // console.log("Received")
     board.engineCleanup(event.data)
     botsTurn = false
 }

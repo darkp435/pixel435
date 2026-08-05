@@ -6,9 +6,8 @@
 //   Frank. If you notice odd-looking code, it is probably because of this. Refactoring it
 //   doesn't really yield any practical benefits and would be a waste a effort, so it's
 //   unadvised to do so.
-// - This is now intended to be ran as WebAssembly. Do not use any OS-dependent APIs. Setting
-//   Intellisense mode to clang-x64 is highly recommended for development. See
-//   BUILD_INSTRUCTIONS.md at the root directory of this project for compilation instructions.
+// - This is now intended to be ran as WebAssembly, but compilation to other platforms is
+//   sort of supported.
 // - The original program featured a halfmove clock, but it has been removed in this program
 //   due to the extra hassle and not yielding much benefit.
 // - The ELO of this chess engine is approximately 1800, though it has not been benchmarked,
@@ -33,6 +32,12 @@
 #include <cstddef>
 #include <string>
 #include <cstdint>
+
+#ifdef BENCHMARKED
+#include <chrono>
+#include <iostream>
+using namespace std::chrono;
+#endif // BENCHMARKED
 
 #define WP               1
 #define WN               2
@@ -147,24 +152,10 @@ struct ExtraGameInfo {
     Zobrist hash;
 };
 
-struct Undo {
-    Move move; // 2B
+struct Undo : public ExtraGameInfo {
+    Move move;
     char captured;
-    unsigned char castling;
-    Square ep_square; // 0x80 if no enpassant, otherwise square of vulnerable pawn
-    unsigned char halfmove_clock;
-    char side_to_move;
-    Square white_king_sq;
-    Square black_king_sq;
-    unsigned long white_pawn_struct; // 24 bits for pawn structure
-    unsigned long black_pawn_struct;
-    short white_pawn_score;
-    short black_pawn_score;
-    short phase;
-    short mg_eval;
-    short eg_modifier;
-    Zobrist hash;
-}; // Size: 33 bytes
+};
 
 #pragma region Chess Engine
 
@@ -201,7 +192,7 @@ constexpr Square sq_tbl_c[128] = {
 };
 
 // Translates the first 4 bytes for row and the last 4 bytes for column into engine Square form
-unsigned char _translate_square(unsigned char square) {
+unsigned char translate_square(unsigned char square) {
     uint8_t col = square & 0xf;
     uint8_t row = square >> 4;
     unsigned char res = col;
@@ -756,7 +747,7 @@ void unmake_move(Piece board[], ExtraGameInfo* game_data, Undo* undo) {
     game_data->hash = undo->hash;
 }
 
-int _is_in_check(Piece board[], char side, Square king_sq) {
+int is_in_check_intern(Piece board[], char side, Square king_sq) {
     int i;
     Square sq = 0x80;
 
@@ -909,23 +900,23 @@ int single_legality_check(Piece board[], ExtraGameInfo* game_data, Move* move_to
     switch(u.move >> 12) {
         case FLAG_CASTLE_S:
             if (
-                !_is_in_check(board, -(game_data->side_to_move), king_sq) &&
-                !_is_in_check(board, -(game_data->side_to_move), (king_sq) - 1) &&
-                !_is_in_check(board, -(game_data->side_to_move), (king_sq) - 2)
+                !is_in_check_intern(board, -(game_data->side_to_move), king_sq) &&
+                !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) - 1) &&
+                !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) - 2)
             ) {
                 return_val = 1;
             }
         case FLAG_CASTLE_L:
             if (
-                !_is_in_check(board, -(game_data->side_to_move), king_sq) &&
-                !_is_in_check(board, -(game_data->side_to_move), (king_sq) + 1) &&
-                !_is_in_check(board, -(game_data->side_to_move), (king_sq) + 2)
+                !is_in_check_intern(board, -(game_data->side_to_move), king_sq) &&
+                !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) + 1) &&
+                !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) + 2)
             ) {
                 return_val = 1;
             }
             break;
         default:
-            if (!_is_in_check(board, -(game_data->side_to_move), king_sq)) {
+            if (!is_in_check_intern(board, -(game_data->side_to_move), king_sq)) {
                 return_val = 1;
             }
             break;
@@ -1250,9 +1241,9 @@ int fully_legal_moves(Piece board[], ExtraGameInfo *game_data, Move legal[], sho
             switch(u.move >> 12) {
                 case FLAG_CASTLE_S:
                     if (
-                        !_is_in_check(board, -(game_data->side_to_move), king_sq) &&
-                        !_is_in_check(board, -(game_data->side_to_move), (king_sq) - 1) &&
-                        !_is_in_check(board, -(game_data->side_to_move), (king_sq) - 2)
+                        !is_in_check_intern(board, -(game_data->side_to_move), king_sq) &&
+                        !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) - 1) &&
+                        !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) - 2)
                     ) {
                         legal[count] = pseudo[i];
                         if (do_move_scoring) {
@@ -1275,9 +1266,9 @@ int fully_legal_moves(Piece board[], ExtraGameInfo *game_data, Move legal[], sho
                     break;
                 case FLAG_CASTLE_L:
                     if (
-                        !_is_in_check(board, -(game_data->side_to_move), king_sq) &&
-                        !_is_in_check(board, -(game_data->side_to_move), (king_sq) + 1) &&
-                        !_is_in_check(board, -(game_data->side_to_move), (king_sq) + 2)
+                        !is_in_check_intern(board, -(game_data->side_to_move), king_sq) &&
+                        !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) + 1) &&
+                        !is_in_check_intern(board, -(game_data->side_to_move), (king_sq) + 2)
                     ) {
                         legal[count] = pseudo[i];
                         if (do_move_scoring) {
@@ -1299,7 +1290,7 @@ int fully_legal_moves(Piece board[], ExtraGameInfo *game_data, Move legal[], sho
                     }
                     break;
                 default:
-                    if (!_is_in_check(board, -(game_data->side_to_move), king_sq)) {
+                    if (!is_in_check_intern(board, -(game_data->side_to_move), king_sq)) {
                         legal[count] = pseudo[i];
                         if (do_move_scoring) {
                             current_move_score = MOVE_SCORE(pseudo[i], board[dest], u.captured, TO_6BIT(dest), history_table, priority_move, killer1, killer2, killer3);
@@ -1344,7 +1335,7 @@ short quiesce(Piece board[], ExtraGameInfo* game_data, short alpha, short beta, 
     Undo u;
     Move moves[MAX_MOVES];
 
-    in_check = _is_in_check(board, game_data->side_to_move, (game_data->side_to_move == WHITE) ? game_data->white_king_sq : game_data->black_king_sq);
+    in_check = is_in_check_intern(board, game_data->side_to_move, (game_data->side_to_move == WHITE) ? game_data->white_king_sq : game_data->black_king_sq);
 
     if (in_check) {
         best_value = -oo; // Do NOT allow stand pat pruning if we are in check
@@ -1444,7 +1435,7 @@ short minimax(
         }
     }
 
-    if (ext_left && (depth <= init_depth - 2) && _is_in_check(board, side, (side == WHITE) ? game_data->white_king_sq : game_data->black_king_sq)) {
+    if (ext_left && (depth <= init_depth - 2) && is_in_check_intern(board, side, (side == WHITE) ? game_data->white_king_sq : game_data->black_king_sq)) {
         ext_left--;
         depth++;
     }
@@ -1568,7 +1559,7 @@ void init_eval(Piece board[], ExtraGameInfo* game_data) {
     }
 }
 
-void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
+void engine_intern(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
     int iter_depth, i;
     short engine_eval;
 
@@ -1597,7 +1588,7 @@ void _engine(Piece board[], ExtraGameInfo* game_data, Undo* last_move) {
 #pragma endregion
 
 // Translates TS version of castling into one compatible for chess engine.
-unsigned char _encode_castling(unsigned char castling) {
+unsigned char encode_castling(unsigned char castling) {
     unsigned char new_rights = 0;
     constexpr int WHITE_KINGSIDE = (1 << 3);
     constexpr int WHITE_QUEENSIDE = (1 << 2);
@@ -1638,19 +1629,19 @@ unsigned char _encode_castling(unsigned char castling) {
 }
 
 // Packs row and col into one integer
-constexpr unsigned char _pack(unsigned char row, unsigned char col) {
+constexpr unsigned char pack(unsigned char row, unsigned char col) {
     return (row << 4) | col;
 }
 
 constexpr unsigned char decode_table[64] = {
-    _pack(7,0), _pack(7, 1), _pack(7, 2), _pack(7, 3), _pack(7, 4), _pack(7, 5), _pack(7, 6), _pack(7, 7),
-    _pack(6,0), _pack(6, 1), _pack(6, 2), _pack(6, 3), _pack(6, 4), _pack(6, 5), _pack(6, 6), _pack(6, 7),
-    _pack(5,0), _pack(5, 1), _pack(5, 2), _pack(5, 3), _pack(5, 4), _pack(5, 5), _pack(5, 6), _pack(5, 7),
-    _pack(4,0), _pack(4, 1), _pack(4, 2), _pack(4, 3), _pack(4, 4), _pack(4, 5), _pack(4, 6), _pack(4, 7),
-    _pack(3,0), _pack(3, 1), _pack(3, 2), _pack(3, 3), _pack(3, 4), _pack(3, 5), _pack(3, 6), _pack(3, 7),
-    _pack(2,0), _pack(2, 1), _pack(2, 2), _pack(2, 3), _pack(2, 4), _pack(2, 5), _pack(2, 6), _pack(2, 7),
-    _pack(1,0), _pack(1, 1), _pack(1, 2), _pack(1, 3), _pack(1, 4), _pack(1, 5), _pack(1, 6), _pack(1, 7),
-    _pack(0,0), _pack(0, 1), _pack(0, 2), _pack(0, 3), _pack(0, 4), _pack(0, 5), _pack(0, 6), _pack(0, 7)
+    pack(7,0), pack(7, 1), pack(7, 2), pack(7, 3), pack(7, 4), pack(7, 5), pack(7, 6), pack(7, 7),
+    pack(6,0), pack(6, 1), pack(6, 2), pack(6, 3), pack(6, 4), pack(6, 5), pack(6, 6), pack(6, 7),
+    pack(5,0), pack(5, 1), pack(5, 2), pack(5, 3), pack(5, 4), pack(5, 5), pack(5, 6), pack(5, 7),
+    pack(4,0), pack(4, 1), pack(4, 2), pack(4, 3), pack(4, 4), pack(4, 5), pack(4, 6), pack(4, 7),
+    pack(3,0), pack(3, 1), pack(3, 2), pack(3, 3), pack(3, 4), pack(3, 5), pack(3, 6), pack(3, 7),
+    pack(2,0), pack(2, 1), pack(2, 2), pack(2, 3), pack(2, 4), pack(2, 5), pack(2, 6), pack(2, 7),
+    pack(1,0), pack(1, 1), pack(1, 2), pack(1, 3), pack(1, 4), pack(1, 5), pack(1, 6), pack(1, 7),
+    pack(0,0), pack(0, 1), pack(0, 2), pack(0, 3), pack(0, 4), pack(0, 5), pack(0, 6), pack(0, 7)
 };
 
 // Opposite of translate_square: decodes a square
@@ -1661,7 +1652,7 @@ constexpr unsigned char decode_table[64] = {
 bool init = false;
 
 // First half of retval is white castling and second half is black castling
-unsigned char _decode_castling(unsigned char castling) {
+unsigned char decode_castling(unsigned char castling) {
     constexpr unsigned char BLACK_QUEENSIDE = 1;
     constexpr unsigned char BLACK_KINGSIDE = 1 << 1;
     constexpr unsigned char WHITE_QUEENSIDE = 1 << 2;
@@ -1676,7 +1667,7 @@ unsigned char _decode_castling(unsigned char castling) {
     if (castling & WHITE_KINGSIDE && castling & WHITE_QUEENSIDE) white = 3;
     else if (castling & WHITE_KINGSIDE) white = 1;
     else if (castling & WHITE_QUEENSIDE) white = 0;
-    return _pack(white, black);
+    return pack(white, black);
 }
 
 bool same_board(Piece* first, Piece* second) {
@@ -1754,21 +1745,21 @@ extern "C" ENGINE_EXPORT size_t get_offset(const char* member) {
 // Tiny compatibility wrapper around the real is_in_check function (now called _is_in_check)
 // king_sq is provided as 4 bits to the row and the other 4 bits to the column
 extern "C" ENGINE_EXPORT int is_in_check(Piece board[], char side, unsigned char king_sq) {
-    return _is_in_check(board, side, _translate_square(king_sq));
+    return is_in_check_intern(board, side, translate_square(king_sq));
 }
 
 // Translates some data into what the actual engine uses; moves, for example.
 extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_data) {
     // printf("Engine\n");
     static ExtraGameInfo egi;
-    egi.castling = _encode_castling(game_data->castling);
+    egi.castling = encode_castling(game_data->castling);
 
     if (!game_data->ep_square) egi.ep_square = 128;
-    else egi.ep_square = _translate_square(game_data->ep_square);
+    else egi.ep_square = translate_square(game_data->ep_square);
 
     egi.side_to_move = -1;
-    egi.white_king_sq = _translate_square(game_data->white_king_sq);
-    egi.black_king_sq = _translate_square(game_data->black_king_sq);
+    egi.white_king_sq = translate_square(game_data->white_king_sq);
+    egi.black_king_sq = translate_square(game_data->black_king_sq);
     if (!init) {
         egi.white_pawn_struct = 0;
         egi.black_pawn_struct = 0;
@@ -1784,17 +1775,17 @@ extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_d
     Piece board_copy[128];
     std::copy(board, board + 128, board_copy);
 
-    _engine(board, &egi, &undo);
+    engine_intern(board, &egi, &undo);
 
     // Either draw or checkmate
     if (same_board(board_copy, board)) {
-        if (_is_in_check(board, BLACK, _translate_square(game_data->black_king_sq))) return CHECKMATE;
+        if (is_in_check_intern(board, BLACK, translate_square(game_data->black_king_sq))) return CHECKMATE;
         return DRAW;
     }
 
     // 128 indicates that there is no ep square
-    if (egi.ep_square == 128) game_data->ep_square = _pack(8, 8);
+    if (egi.ep_square == 128) game_data->ep_square = pack(8, 8);
     else game_data->ep_square = DECODE(egi.ep_square);
-    game_data->castling = _decode_castling(egi.castling);
+    game_data->castling = decode_castling(egi.castling);
     return NOTHING;
 }

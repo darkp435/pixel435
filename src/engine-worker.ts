@@ -53,7 +53,7 @@ function cString(str: string) {
 }
 
 self.onmessage = async (event) => {
-    console.log("Called")
+    // console.log("Called")
     const data = event.data
     const boardBytes = data[0]
     if (Wasm === undefined) {
@@ -92,11 +92,12 @@ self.onmessage = async (event) => {
     Wasm.setValue(egiPtr + whiteKingSqOffset, data[3], "i8")
     Wasm.setValue(egiPtr + blackKingSqOffset, data[4], "i8")
 
-    Wasm._engine(boardPtr, egiPtr)
+    const res = Wasm._engine(boardPtr, egiPtr)
 
     self.postMessage([
         unpackGrid(boardPtr),
         uncompact(Wasm.getValue(egiPtr + castlingOffset, "i8")),
-        uncompact(Wasm.getValue(egiPtr + epSquareOffset, "i8"))
+        uncompact(Wasm.getValue(egiPtr + epSquareOffset, "i8")),
+        res
     ])
 }
