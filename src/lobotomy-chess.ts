@@ -852,3 +852,8 @@ engineWorker.onmessage = (event) => {
     board.engineCleanup(event.data)
     botsTurn = false
 }
+
+// Just for annoyance
+window.addEventListener("beforeunload", (e) => {
+    e.preventDefault()
+})

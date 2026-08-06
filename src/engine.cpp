@@ -112,6 +112,7 @@ using namespace std::chrono;
         (((MOVE >> 14) == 1) ? PROMOTION_VALUES[(MOVE >> 12) & 3] : 0) \
     ) \
 )
+
 #define HISTORY_MAX 8192
 #define HISTORY_MAX_SHIFT 13
 #define HISTORY_DECAY_SHIFT 14
@@ -1681,8 +1682,9 @@ bool same_board(Piece* first, Piece* second) {
 } // namespace
 
 #define NOTHING 0
-#define CHECKMATE 1
+#define BLACK_LOSE 1
 #define DRAW 2
+#define WHITE_LOSE 3
 
 typedef char TurnResult;
 
@@ -1779,7 +1781,7 @@ extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_d
 
     // Either draw or checkmate
     if (same_board(board_copy, board)) {
-        if (is_in_check_intern(board, BLACK, translate_square(game_data->black_king_sq))) return CHECKMATE;
+        if (is_in_check_intern(board, BLACK, translate_square(game_data->black_king_sq))) return BLACK_LOSE;
         return DRAW;
     }
 
@@ -1787,5 +1789,15 @@ extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_d
     if (egi.ep_square == 128) game_data->ep_square = pack(8, 8);
     else game_data->ep_square = DECODE(egi.ep_square);
     game_data->castling = decode_castling(egi.castling);
+
+    egi.side_to_move = WHITE;
+    // Not read from but needed to prevent UB
+    Move _ps[MAX_MOVES];
+
+    int moves = pseudo_legal_moves(board, &egi, _ps, 0, nullptr, nullptr, 0, 1);
+    if (moves == 0) {
+        return is_in_check(board, WHITE, egi.white_king_sq) ? WHITE_LOSE : DRAW;
+    }
+    
     return NOTHING;
 }
