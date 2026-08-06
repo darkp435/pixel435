@@ -928,7 +928,7 @@ int single_legality_check(Piece board[], ExtraGameInfo* game_data, Move* move_to
     return return_val;
 }
 
-int pseudo_legal_moves(Piece board[], ExtraGameInfo* game_data, Move moves[], int use_bitboard, HalfBitboard* block_bitboard_high, HalfBitboard* block_bitboard_low, int only_capt, int early_return) {
+int pseudo_legal_moves(Piece board[], ExtraGameInfo* game_data, Move moves[], bool use_bitboard, HalfBitboard* block_bitboard_high, HalfBitboard* block_bitboard_low, bool only_capt, bool early_return) {
     int i, j, k;
     int m = 0;
     int reverse_search = (early_return ? (game_data->side_to_move == WHITE) : (game_data->side_to_move == BLACK));
@@ -1794,7 +1794,8 @@ extern "C" ENGINE_EXPORT TurnResult engine(Piece board[], IExtraGameInfo* game_d
     // Not read from but needed to prevent UB
     Move _ps[MAX_MOVES];
 
-    int moves = pseudo_legal_moves(board, &egi, _ps, 0, nullptr, nullptr, 0, 1);
+    int moves = pseudo_legal_moves(board, &egi, _ps, false, nullptr, nullptr, false, true);
+    
     if (moves == 0) {
         return is_in_check(board, WHITE, egi.white_king_sq) ? WHITE_LOSE : DRAW;
     }

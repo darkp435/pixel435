@@ -83,6 +83,26 @@ class GridCoord {
     }
 }
 
+function _drawEndScreen(title: string, main: string) {
+
+}
+
+function endScreen(result: number) {
+    switch (result) {
+    case 1:
+        _drawEndScreen("You won!", "That was fun, wasn't it?")
+        break
+    case 2:
+        _drawEndScreen("Draw", "Hey, look on the bright side: it's better than losing!")
+        break
+    case 3:
+        _drawEndScreen("You lost!", "Dang, better luck next time!")
+        break
+    default:
+        console.error(`unknown retval of engine function (got ${result})`)
+    }
+}
+
 /**  Returns the absolute difference between two numbers. */
 function difference(a: number, b: number) {
     return Math.abs(a - b)
@@ -205,8 +225,9 @@ class Board {
     engineCleanup(data: any) {
         this.grid = data[0] as (ChessPiece | null)[][]
         this.castle = data[1][0] as number
-        this.blackCastle = data[1][0] as number
+        this.blackCastle = data[1][1] as number
         this.enPassant = new GridCoord(data[2][0] as number, data[2][1] as number)
+        if (data[3]) endScreen(data[3])
         this.redraw()
     }
 
