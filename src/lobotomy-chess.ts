@@ -47,6 +47,64 @@
 // - Fixed Queen and Rook jumping over pieces like a kangaroo
 // - Pushed to "production" if you could call it that
 
+// REMOVE WHEN DONE
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8">
+// <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// <link rel="preconnect" href="https://fonts.googleapis.com">
+// <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+// <title></title>
+
+// <style>
+// .end-screen {
+//     font-family: "Comic Sans MS", cursive;
+//     width: 30rem;
+//     height: 20rem;
+//     background: linear-gradient(.35turn, #b65050, #00ff00, #ff0000, #0000ff, #676767, #00ffae, #694200, #420699, #069420, #dead)
+// }
+
+// .overlay {
+//     position: fixed;
+//     display: flex;
+//     inset: 0;
+//     background: rgba(105, 105, 105, 0.5);
+//     justify-content: center;
+//     align-items: center;
+// }
+
+// .lost-text {
+//     text-align: center;
+//     color: black;
+//     -webkit-text-stroke: 2px white;
+// }
+
+// .again-button {
+//     display: block;
+//     margin: 0 auto;
+//     border: 0;
+//     width: 10rem;
+//     height: 5rem;
+//     background-image: linear-gradient(#000000, #555555);
+// }
+
+// #play-again {
+//     -webkit-text-stroke: 2px #00ff00;
+// }
+// </style>
+// </head>
+// <body>
+//     <div class="overlay">
+//         <div class="end-screen">
+//             <h1 class="lost-text">You lost!</h1>
+//             <p class="lost-text">Dang, you really had it there, didn't you?</p>
+//             <button class="again-button lost-text" id="play-again">PLAY AGAIN</button>
+//         </div>
+//     </div>
+// </body>
+// </html>
+
 import { MainModule } from "./engine";
 
 // Needed for is_in_check which doesn't have to share memory
