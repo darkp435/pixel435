@@ -137,7 +137,7 @@ body {
 .dvd {
     position: absolute;
     top: 0;
-    animation: dvd-waterfall 5s linear infinite;
+    animation: dvd-waterfall 5s linear 100;
 }
 
 @keyframes dvd-waterfall {
