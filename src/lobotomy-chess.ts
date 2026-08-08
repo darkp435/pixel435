@@ -47,64 +47,6 @@
 // - Fixed Queen and Rook jumping over pieces like a kangaroo
 // - Pushed to "production" if you could call it that
 
-// REMOVE WHEN DONE
-// <!DOCTYPE html>
-// <html lang="en">
-// <head>
-// <meta charset="UTF-8">
-// <meta name="viewport" content="width=device-width, initial-scale=1.0">
-// <link rel="preconnect" href="https://fonts.googleapis.com">
-// <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-// <title></title>
-
-// <style>
-// .end-screen {
-//     font-family: "Comic Sans MS", cursive;
-//     width: 30rem;
-//     height: 20rem;
-//     background: linear-gradient(.35turn, #b65050, #00ff00, #ff0000, #0000ff, #676767, #00ffae, #694200, #420699, #069420, #dead)
-// }
-
-// .overlay {
-//     position: fixed;
-//     display: flex;
-//     inset: 0;
-//     background: rgba(105, 105, 105, 0.5);
-//     justify-content: center;
-//     align-items: center;
-// }
-
-// .lost-text {
-//     text-align: center;
-//     color: black;
-//     -webkit-text-stroke: 2px white;
-// }
-
-// .again-button {
-//     display: block;
-//     margin: 0 auto;
-//     border: 0;
-//     width: 10rem;
-//     height: 5rem;
-//     background-image: linear-gradient(#000000, #555555);
-// }
-
-// #play-again {
-//     -webkit-text-stroke: 2px #00ff00;
-// }
-// </style>
-// </head>
-// <body>
-//     <div class="overlay">
-//         <div class="end-screen">
-//             <h1 class="lost-text">You lost!</h1>
-//             <p class="lost-text">Dang, you really had it there, didn't you?</p>
-//             <button class="again-button lost-text" id="play-again">PLAY AGAIN</button>
-//         </div>
-//     </div>
-// </body>
-// </html>
-
 import { MainModule } from "./engine";
 
 // Needed for is_in_check which doesn't have to share memory
@@ -129,7 +71,46 @@ const scotlandFlagClearDuration = 10000
 const width = window.innerWidth
 const height = window.innerHeight
 
-const turnNotifier = document.getElementById("turn-notifier") as HTMLParagraphElement
+const errorMessages = [
+    "I CAN'T DIE HERE! ALL WILL BE LOST!",
+    "NO YOU CAN'T, I CAN'T DIE!",
+    "PLEASE, I CAN'T DIE, I CAN'T!",
+    "HELP, PLEASE I NEED HELP!",
+    "Hey ${player} I'm telling you this that if I die, you lose this fight... literally", // No string interpolation ON PURPOSE
+    "GH!",
+    "M-Must, endure!",
+    "Ack!!",
+    "I can't, lose!",
+    "NO!",
+    "Segmentation fault (core dumped)",
+    "[[Hyperlink Blocked]]",
+    "i'm the original error message",
+    "deltarune tomorrow",
+    "Error 404: Page Not Found",
+    "TypeError: 'x' is not a function",
+    "oopsies...",
+    "error: expected ';'",
+    "maybe the real error message were the friends we made along the way",
+    "500 elements covering up the chessboard!",
+    "SUBSCRIBE TO @CharltonGaming ON YOUTUBE!!!",
+    "i use arch btw",
+    "OH NOES!!!!!!!!!",
+    "undefined reference to WinMain",
+    "According to all known laws of aviation...",
+    "mojang fix bugrock",
+    "🔥🔥🔥🔥🔥🔥🔥🔥🔥",
+    "did u know that this website cant run in IE??? kewl right? :D",
+    "placeholder", // Not a placeholder
+    ":) :D :O :P C: :/ :-) :3 <3",
+    "Thanks for playing my chess game btw. I really do appreciate it.",
+    "div { display: flex; justify-content: center }",
+    "[object Object]",
+    "'Tis but a scratch!",
+    "You shall not pass!",
+    "We've had the first error, but what about second error?",
+    "You have no power here!",
+    "This program cannot be run in DOS mode."
+]
 
 class GridCoord {
     constructor(public row: number, public col: number) {}
@@ -142,7 +123,30 @@ class GridCoord {
 }
 
 function _drawEndScreen(title: string, main: string) {
+    const overlay = document.createElement("div") as HTMLDivElement
+    overlay.classList.add("game-over-overlay")
+    document.body.appendChild(overlay)
 
+    const endScreen = document.createElement("div") as HTMLDivElement
+    endScreen.classList.add("end-screen")
+    overlay.appendChild(endScreen)
+    
+    const heading = document.createElement("h1") as HTMLHeadingElement
+    heading.textContent = title
+    heading.classList.add("lost-text")
+    endScreen.appendChild(heading)
+
+    const details = document.createElement("p") as HTMLParagraphElement
+    details.textContent = main
+    details.classList.add("lost-text")
+    endScreen.appendChild(details)
+
+    const againButton = document.createElement("button") as HTMLButtonElement
+    againButton.classList.add("again-button", "lost-text")
+    againButton.id = "play-again"
+    againButton.textContent = "PLAY AGAIN"
+    endScreen.appendChild(againButton)
+    endScreen.onclick = () => window.location.reload()
 }
 
 function endScreen(result: number) {
@@ -310,24 +314,28 @@ class Board {
         queen.src = "./assets/white-queen.png"
         queen.alt = "Q"
         queen.onclick = () => this._promotionHandler(coord, ChessPiece.WQueen)
+        queen.classList.add("promotion-img")
         promotionBox.appendChild(queen)
 
         const rook = document.createElement("img")
         rook.src = "./assets/white-rook.png"
         rook.alt = "R"
         rook.onclick = () => this._promotionHandler(coord, ChessPiece.WRook)
+        rook.classList.add("promotion-img")
         promotionBox.appendChild(rook)
 
         const knight = document.createElement("img")
         knight.src = "./assets/white-knight.png"
         knight.alt = "N"
         knight.onclick = () => this._promotionHandler(coord, ChessPiece.WKnight)
+        knight.classList.add("promotion-img")
         promotionBox.appendChild(knight)
 
         const bishop = document.createElement("img")
         bishop.src = "./assets/white-bishop.png"
         bishop.alt = "B"
         bishop.onclick = () => this._promotionHandler(coord, ChessPiece.WBishop)
+        bishop.classList.add("promotion-img")
         promotionBox.appendChild(bishop)
     }
 
@@ -744,6 +752,7 @@ class Board {
                 horse.addEventListener("animationend", () => horse.remove())
             }
             const horseNeigh = new Audio("./assets/horse.mp3")
+            spawnErrorPrompt(randint(0, 5))
             horseNeigh.play()
         }
 
@@ -856,6 +865,63 @@ function overlaps(a: HTMLElement, b: HTMLElement) {
     )
 }
 
+function spawnErrorPrompt(amount: number) {
+    new Audio("./assets/error-2.mp3").play()
+
+    for (let _ = 0; _ < amount; _++) {
+        const box = document.createElement("div")
+        box.classList.add("error-box", "sysfont")
+        document.body.appendChild(box)
+        box.style.top = `${randint(0, 75)}vh`
+        box.style.left = `${randint(0, width)}px`
+
+        const errorHeader = document.createElement("div")
+        errorHeader.classList.add("error-header")
+        box.appendChild(errorHeader)
+
+        const headingError = document.createElement("p")
+        headingError.textContent = "Error"
+        errorHeader.appendChild(headingError)
+
+        const crossIcon = document.createElement("img")
+        crossIcon.src = "./assets/cross.png"
+        crossIcon.draggable = false
+        errorHeader.appendChild(crossIcon)
+
+        const errorMain = document.createElement("div")
+        errorMain.classList.add("error-main")
+        box.appendChild(errorMain)
+
+        const errorIcon = document.createElement("img")
+        errorIcon.classList.add("error-icon")
+        errorIcon.src = "./assets/error.png"
+        errorMain.appendChild(errorIcon)
+
+        const errorDesc = document.createElement("p")
+        errorDesc.classList.add("error-desc")
+        errorDesc.textContent = errorMessages[randint(0, errorMessages.length - 1)]
+        errorMain.appendChild(errorDesc)
+
+        const errorFooter = document.createElement("div")
+        errorFooter.classList.add("error-footer")
+        box.appendChild(errorFooter)
+
+        const closePrompt = document.createElement("button")
+        closePrompt.classList.add("close-prompt")
+        closePrompt.innerHTML = "OK"
+        errorFooter.appendChild(closePrompt)
+
+        closePrompt.onclick = () => box.remove()
+
+        // Dragging
+        box.addEventListener("mousedown", (e) => {
+            draggedElement = box
+            offsetX = e.clientX - box.offsetLeft
+            offsetY = e.clientY - box.offsetTop
+        })
+    }
+}
+
 // Created via JS to avoid a gigantic HTML file
 // Text tile color
 let black = true
@@ -909,9 +975,11 @@ domBoard.addEventListener('click', (event) => {
     }
 })
 
+let started = false
+
 document.getElementById("default")!.onclick = () => {
     document.querySelector(".overlay")!.remove()
-    turnNotifier.style.display = "block"
+    started = true
     import("./engine.js").then(module => {
         module.default().then(wasm => Wasm = wasm)
         boosted = false
@@ -920,6 +988,7 @@ document.getElementById("default")!.onclick = () => {
 
 document.getElementById("boosted")!.onclick = () => {
     document.querySelector(".overlay")!.remove()
+    started = true
     import("./engine-boosted.js").then(module => {
         module.default().then(wasm => Wasm = wasm)
         boosted = true
@@ -932,7 +1001,33 @@ engineWorker.onmessage = (event) => {
     botsTurn = false
 }
 
-// Just for annoyance
-window.addEventListener("beforeunload", (e) => {
-    e.preventDefault()
+let draggedElement: HTMLElement | null = null
+let offsetX: number
+let offsetY: number
+
+setInterval(() => {
+    if (!started) return
+    if (randint(1, 100) === 1) {
+        new Audio("./assets/notification.mp3").play()
+        const fih = document.createElement("img")
+        fih.src = "./assets/fih.png"
+        fih.classList.add("fih")
+        document.body.appendChild(fih)
+        setTimeout(() => fih.remove(), 1200)
+    }
+
+    if (randint(1, 100) > 2) return
+
+    const amount = randint(10, 50)
+    spawnErrorPrompt(amount)
+}, 1000);
+
+// Also dragging
+document.addEventListener("mousemove", (e) => {
+    if (!draggedElement) return
+
+    draggedElement.style.left = `${e.clientX - offsetX}px`
+    draggedElement.style.top = `${e.clientY - offsetY}px`
 })
+
+document.addEventListener("mouseup", () => draggedElement = null)

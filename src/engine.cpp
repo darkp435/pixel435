@@ -198,7 +198,7 @@ unsigned char translate_square(unsigned char square) {
     uint8_t row = square >> 4;
     unsigned char res = col;
     res += ((7 - row) * 0x10);
-    return TO_6BIT(res);
+    return res;
 }
 
 constexpr char mg_pawn_table[64] = {
