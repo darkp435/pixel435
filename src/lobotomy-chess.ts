@@ -2,50 +2,8 @@
 // Creator: darkp435 (GitHub)
 // Quote of this file:
 // "no" - frankjin05
-//
-// Devlog
-// 25/06
-// - Started working on project.
-// - Started transpiling Frank's chess engine. Underestimated how bad
-//   Frank's code was. Contemplating life choices.
-// 26/06
-// - Started working on actual chess logic until I realised that it's
-//   gonna be an adventure writing it.
-// - Continued transpilation of engine.c into engine.ts
-// 29/06
-// - Continued working on chess logic, specifically moves.
-// - Realised handling castling and en passant was going to be a big
-//   pain.
-// 30/06
-// - Worked on chess engine because I realised that the chess logic
-//   was gonna be a pain.
-// 01/07
-// - Worked on chess engine and saw the pyramid of doom. Severely
-//   regretted life choices. Why does Frank's code have to be so
-//   bad??? Like, is there no other way to write code without 4
-//   levels of nested if statements?
-// 14/07
-// - Wrote the logic for bishop, rook, pawn and queen moves.
-// 15/07
-// - Fixed the logic for the aforementioned pieces and add king
-//   moves. Man I hate off-by-one errors.
-// - Switched to WebAssembly instead of manual transpilation because
-//   I realised it's faster and less painful.
-// - Add actual icons for the chess pieces.
-// - Wrote some CSS to make the website look good.
-// 16/07
-// - Added promotion
-// - Added castling. There was a bug that led to the king disappearing
-//   and it took about 30 minutes and all my sanity to fix.
-// 17/07 - 19/07
-// - Continued integrating chess engine
-// 20/07
-// - Fixed several major bugs concerning the chess engine and it
-//   half-works now. Yippee!
-// - Code is definitely due for a refactor
-// 25/07
-// - Fixed Queen and Rook jumping over pieces like a kangaroo
-// - Pushed to "production" if you could call it that
+// Fun fact! This webpage uses by far the most audio files and
+// image assets out of the other webpages on this website.
 
 import { MainModule } from "./engine";
 
@@ -58,6 +16,8 @@ let boosted: boolean
 const chessBoard = document.getElementById("chess-board") as HTMLDivElement
 let botsTurn = false
 let boardRotationDeg = 0
+// 8 (pawns) + 10 (rooks) + 9 (queen) + 12 (bishops and knights)
+let currentPlayerMaterial = 39
 
 const engineWorker = new Worker(
     new URL("./engine-worker.ts", import.meta.url),
@@ -70,6 +30,9 @@ const scotlandFlagClearDuration = 10000
 
 const width = window.innerWidth
 const height = window.innerHeight
+
+const LOBOTOMISED_CHANCE_PERCENTAGE = 1
+const FIH_CHANCE_PERCENTAGE = 1
 
 const errorMessages = [
     "I CAN'T DIE HERE! ALL WILL BE LOST!",
@@ -186,6 +149,11 @@ enum ChessPiece {
     BKing = -6
 }
 
+const chessPieces = [
+    ChessPiece.WPawn, ChessPiece.WKnight, ChessPiece.WBishop, ChessPiece.WRook, ChessPiece.WQueen, ChessPiece.WKing,
+    ChessPiece.BPawn, ChessPiece.BKnight, ChessPiece.BBishop, ChessPiece.BRook, ChessPiece.BQueen, ChessPiece.BKing
+]
+
 // To be compatible with engine.cpp
 enum Castle {
     Long = 0,
@@ -265,7 +233,7 @@ class Board {
         return piece === ChessPiece.BBishop || piece === ChessPiece.BKing || piece === ChessPiece.BKnight || piece === ChessPiece.BPawn || piece === ChessPiece.BQueen || piece === ChessPiece.BRook
     }
 
-    /** Redraws the ENTIRE board so this may tank performance */
+    /** Redraws the entire board. */
     redraw() {
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
@@ -280,6 +248,7 @@ class Board {
     executeEngine() {
         botsTurn = true
         const params = this.getRequiredBotInfo()
+        currentPlayerMaterial = this.calcMaterial(false)
         engineWorker.postMessage(params)
     }
 
@@ -291,6 +260,12 @@ class Board {
         this.enPassant = new GridCoord(data[2][0] as number, data[2][1] as number)
         if (data[3]) endScreen(data[3])
         this.redraw()
+        // See if the player traded/sacrificed (or blundered :P) their queen
+        // A queen is worth 9 pts of material and you can only capture one piece per turn
+        // so this is what we're checking for.
+        if (currentPlayerMaterial - this.calcMaterial(false) === 9) {
+            blunderQueen()
+        }
     }
 
     private _promotionHandler(coord: GridCoord, pieceType: ChessPiece) {
@@ -797,6 +772,45 @@ class Board {
             boosted
         ]
     }
+
+    private calcMaterialForPiece(black: boolean, piece: ChessPiece | null): number {
+        if (piece === null || (black && piece > 0) || (!black && piece < 0)) return 0
+        // This is not a very elegant solution to the problem, but it suffices.
+        switch (piece) {
+        case ChessPiece.BPawn:
+        case ChessPiece.WPawn:
+            return 1
+        case ChessPiece.BBishop:
+        case ChessPiece.BKnight:
+        case ChessPiece.WKnight:
+        case ChessPiece.WBishop:
+            return 3
+        case ChessPiece.BQueen:
+        case ChessPiece.WQueen:
+            return 9
+        case ChessPiece.BRook:
+        case ChessPiece.WRook:
+            return 5
+        case ChessPiece.BKing:
+        case ChessPiece.WKing:
+            return 0
+        // Shouldn't happen
+        default:
+            console.log("error: unknown chess piece!")
+            return 0
+        }
+    }
+
+    calcMaterial(black: boolean) {
+        let sum = 0
+        this.grid.forEach(_ => {
+            _.forEach(piece => {
+                sum += this.calcMaterialForPiece(black, piece)
+            })
+        })
+
+        return sum
+    }
 }
 
 function randint(min: number, max: number) {
@@ -840,6 +854,21 @@ function pieceToDisplay(piece: ChessPiece | null) {
         return ""
     }
     return _chessPieceMap.get(piece) || ""
+}
+
+function shuffle() {
+    const paths = [
+        "./assets/white-pawn.png", "./assets/white-bishop.png", "./assets/white-rook.png", 
+        "./assets/white-queen.png", "./assets/white-knight.png", "./assets/white-king.png",
+        "./assets/black-pawn.png", "./assets/black-bishop.png", "./assets/black-rook.png", 
+        "./assets/black-queen.png", "./assets/black-knight.png", "./assets/black-king.png"
+    ]
+
+    chessPieces.forEach(piece => {
+        const index = randint(0, paths.length - 1)
+        _chessPieceMap.set(piece, paths[index])
+        paths.splice(index, 1)
+    })
 }
 
 function idToGridCoord(id: string) {
@@ -894,6 +923,7 @@ function spawnErrorPrompt(amount: number) {
 
         const errorIcon = document.createElement("img")
         errorIcon.classList.add("error-icon")
+        errorIcon.draggable = false
         errorIcon.src = "./assets/error.png"
         errorMain.appendChild(errorIcon)
 
@@ -920,6 +950,10 @@ function spawnErrorPrompt(amount: number) {
             offsetY = e.clientY - box.offsetTop
         })
     }
+}
+
+function blunderQueen() {
+    new Audio("./assets/faaah.mp3").play()
 }
 
 // Created via JS to avoid a gigantic HTML file
@@ -1007,13 +1041,27 @@ let offsetY: number
 
 setInterval(() => {
     if (!started) return
-    if (randint(1, 100) === 1) {
+    if (randint(1, 100) <= FIH_CHANCE_PERCENTAGE) {
         new Audio("./assets/notification.mp3").play()
         const fih = document.createElement("img")
         fih.src = "./assets/fih.png"
         fih.classList.add("fih")
         document.body.appendChild(fih)
         setTimeout(() => fih.remove(), 1200)
+    }
+
+    if (randint(1, 100) <= LOBOTOMISED_CHANCE_PERCENTAGE) {
+        new Audio("./assets/lobotomy.mp3").play()
+        const lobotomyImg = document.createElement("img")
+        lobotomyImg.src = "./assets/lobotomy.png"
+        lobotomyImg.classList.add("lobotomy")
+        setTimeout(() => {
+            lobotomyImg.remove()
+        }, 5100);
+        document.body.appendChild(lobotomyImg)
+
+        shuffle()
+        board.redraw()
     }
 
     if (randint(1, 100) > 2) return

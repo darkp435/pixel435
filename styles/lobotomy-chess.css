@@ -1,3 +1,10 @@
+/*
+Length units in math: m, cm, mm, km
+Length units in science: m, cm, mm, km, au, ly, pm, nm
+Length units in CSS: mm, cm, in, px, vh, vw, rem, em, fr, %, ch, pt, pc, rcap, rch, rex, ric, rlh, vmin, vmax
+This is why we love CSS.
+*/
+
 #chess-board {
     display: grid;
     grid-template-columns: repeat(8, 70px);
@@ -216,6 +223,7 @@ body {
     border: 1px solid #000000;
     border-radius: var(--error-box-border-radius);
     box-shadow: 0 0 1px rgb(59, 59, 59);
+    user-select: none;
 }
 
 .error-header {
@@ -267,4 +275,23 @@ body {
     height: 100vh;
     width: 33vw;
     z-index: 50;
+}
+
+.lobotomy {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 999999999;
+    transform: translate(-50%, -50%);
+    animation: disappear 5s forwards linear;
+}
+
+@keyframes disappear {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }

@@ -1,3 +1,7 @@
+// Worker for lobotomy-chess.ts
+// Quote of this file:
+// "I'm building an APC in BABFT" - my friend and fish in residence James
+
 import { MainModule } from "./engine"
 
 // import createModule, { MainModule } from "./engine.js"
