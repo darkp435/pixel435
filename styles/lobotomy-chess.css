@@ -295,3 +295,15 @@ body {
         opacity: 0;
     }
 }
+
+.shaky {
+    animation: shake 0.1s 1000;
+}
+
+@keyframes shake {
+    0%   { transform: translate(0, 0); }
+    25%  { transform: translate(5px, -5px); }
+    50%  { transform: translate(-5px, 5px); }
+    75%  { transform: translate(5px, 5px); }
+    100% { transform: translate(-5px, -5px); }
+}
