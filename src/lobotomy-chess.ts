@@ -1047,6 +1047,10 @@ setInterval(() => {
         fih.src = "./assets/fih.png"
         fih.classList.add("fih")
         document.body.appendChild(fih)
+        if (!chessBoard.classList.contains("shaky")) {
+            chessBoard.classList.add("shaky")
+            setTimeout(() => chessBoard.classList.remove("shaky"), 100000)
+        }
         setTimeout(() => fih.remove(), 1200)
     }
 
